@@ -1,0 +1,15 @@
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/obj/Debug/net7.0/DungeonGame.csproj.AssemblyReference.cache
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/obj/Debug/net7.0/DungeonGame.GeneratedMSBuildEditorConfig.editorconfig
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/obj/Debug/net7.0/DungeonGame.AssemblyInfoInputs.cache
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/obj/Debug/net7.0/DungeonGame.AssemblyInfo.cs
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/obj/Debug/net7.0/DungeonGame.csproj.CoreCompileInputs.cache
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/bin/Debug/net7.0/DungeonGame
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/bin/Debug/net7.0/DungeonGame.deps.json
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/bin/Debug/net7.0/DungeonGame.runtimeconfig.json
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/bin/Debug/net7.0/DungeonGame.dll
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/bin/Debug/net7.0/DungeonGame.pdb
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/obj/Debug/net7.0/DungeonGame.dll
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/obj/Debug/net7.0/refint/DungeonGame.dll
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/obj/Debug/net7.0/DungeonGame.pdb
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/obj/Debug/net7.0/DungeonGame.genruntimeconfig.cache
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/obj/Debug/net7.0/ref/DungeonGame.dll
