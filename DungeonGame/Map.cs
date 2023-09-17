@@ -2,45 +2,41 @@ namespace DungeonGame;
 
 public class Map
 {
-    private int[,] map;
-    private int width;
-    private int height;
-    private int density;
+    private int[,] _map;
+    private readonly int _width;
+    private readonly int _height;
+    private readonly int _density;   
     
     
     public Map(int width, int height, int density)
     {
-        this.width = width;
-        this.height = height;
-        this.density = density;
-        map = new int[height,width];
-        generateBoard();
+        _width = width;
+        _height = height;
+        _density = density;
+        _map = new int[height,width];
+        GenerateMap();
     }
 
-    private void generateBoard()
+    private void GenerateMap()
     {
         
         RandomFillMap();
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 2; i++) {
             SmoothMap();
         }
         
-        printBoard();
-
-        //ProcessMap();
-        
     }
 
-    void SmoothMap()
+    private void SmoothMap()
     {
-        int[,] smoothedMap = new int[height, width];
+        int[,] smoothedMap = new int[_height, _width];
 
-        for (var i = 0; i < height; i++)
+        for (var i = 0; i < _height; i++)
         {
-            for (var j = 0; j < width; j++)
+            for (var j = 0; j < _width; j++)
             {
-                int neighbourWallTiles = GetSurroundingWallCount(i, j);
+                var neighbourWallTiles = GetSurroundingWallCount(i, j);
 
                 smoothedMap[i, j] = neighbourWallTiles switch
                 {
@@ -50,59 +46,52 @@ public class Map
                 };
             }
         }
-        map = smoothedMap;
+        _map = smoothedMap;
     }
 
     int GetSurroundingWallCount(int x, int y)
     {
-        int WallCount = 0;
+        var wallCount = 0;
 
         for (int neighbourX = x - 1; neighbourX <= x + 1; neighbourX++) {
             for (int neighbourY = y - 1; neighbourY <= y + 1; neighbourY++) {
-                if (neighbourX >= 0 && neighbourX < height && neighbourY >= 0 && neighbourY < width) {
+                if (neighbourX >= 0 && neighbourX < _height && neighbourY >= 0 && neighbourY < _width) {
                     if (neighbourX != x || neighbourY != y) {
-                        WallCount += map[neighbourX,neighbourY];
+                        wallCount += _map[neighbourX,neighbourY];
                     }
                 } else {
-                    WallCount++;
+                    wallCount++;
                 }
             }
         }
-        return WallCount;
+        return wallCount;
     }
 
     void RandomFillMap()
     {
-        Random rng = new Random(Programm.seed);
+        Random rng = new Random(Programm.Seed);
 
-        for(var i = 0; i < height; i++)
+        for(var i = 0; i < _height; i++)
         {
-            for(var j = 0; j < width; j++)
+            for(var j = 0; j < _width; j++)
             {
-                if (j == 0 || j == width -1 || i == 0 || i == height -1) {
-                    map[i,j] = 1;
+                if (j == 0 || j == _width -1 || i == 0 || i == _height -1) {
+                    _map[i,j] = 1;
                 } else
                 {
-                    if (rng.NextDouble() * 100 <= density) map[i, j] = 1;
+                    if (rng.NextDouble() * 100 <= _density) _map[i, j] = 1;
                 }
             }
         }
     }
 
-    public void printBoard()
+    public void PrintMap()
     {
-        for(var i = 0; i < height; i++)
+        for(var i = 0; i < _height; i++)
         {
-            for(var j = 0; j < width; j++)
+            for(var j = 0; j < _width; j++)
             {
-                if (map[i, j] == 1) 
-                {
-                    Console.Write("\u2588");
-                }
-                else
-                {
-                    Console.Write(" ");
-                }
+                Console.Write(_map[i, j] == 1 ? "\u2588" : " ");
             }
             Console.WriteLine("");
         }

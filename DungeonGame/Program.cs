@@ -2,12 +2,29 @@
 
 class Programm
 {
-    public static int seed = DateTime.Now.ToString("MM/dd/yyyy").GetHashCode();
+    public static readonly int Seed = CreatePseudoRandomSeed();
     
     public static void Main()
     {
-        Map map = new Map(100, 100, 52);
+        //create a new map
+        var map = new Map(20, 20, 60);
         
-        //map.printBoard();
+        //print the map //TODO
+        map.PrintMap();
+    }
+    
+    //function to generate the seed
+    private static int CreatePseudoRandomSeed()
+    {
+        var randomSeed = 0;
+        var iterations = 0;
+        var date = DateTime.Now.ToString("F").ToCharArray();
+        foreach (var item in date)
+        {
+            //generates random seed based on the date
+            randomSeed += item * iterations + iterations;
+            iterations++;
+        }
+        return randomSeed;
     }
 }
