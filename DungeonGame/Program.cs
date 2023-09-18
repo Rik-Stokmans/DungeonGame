@@ -9,7 +9,7 @@ class Program
 
     public static void Main()
     {
-        TestMap map = new TestMap(50, 50, 54);
+        Map map = new Map(50, 50, 54);
         
         map.PrintMap();
     }
