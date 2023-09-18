@@ -1,15 +1,16 @@
-﻿namespace DungeonGame;
+﻿using System.Diagnostics;
 
-class Programm
+namespace DungeonGame;
+
+class Program
 {
     public static readonly int Seed = CreatePseudoRandomSeed();
-    
+    private static Map map;
+
     public static void Main()
     {
-        //create a new map
-        var map = new Map(20, 20, 60);
+        TestMap map = new TestMap(50, 50, 54);
         
-        //print the map //TODO
         map.PrintMap();
     }
     

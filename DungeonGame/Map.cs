@@ -3,8 +3,8 @@ namespace DungeonGame;
 public class Map
 {
     private int[,] _map;
-    private readonly int _width;
-    private readonly int _height;
+    private int _width;
+    private int _height;
     private readonly int _density;   
     
     
@@ -15,6 +15,8 @@ public class Map
         _density = density;
         _map = new int[height,width];
         GenerateMap();
+        
+        ProcessMap();
     }
 
     private void GenerateMap()
@@ -69,7 +71,7 @@ public class Map
 
     void RandomFillMap()
     {
-        Random rng = new Random(Programm.Seed);
+        Random rng = new Random(Program.Seed);
 
         for(var i = 0; i < _height; i++)
         {
@@ -85,15 +87,93 @@ public class Map
         }
     }
 
+    void ProcessMap()
+    {
+        var roomRegions = GetRegions(0);
+    }
+
+    private List<List<Coord>> GetRegions(int tileType) 
+    {
+        List<List<Coord>> regions = new ();
+        var mapFlags = new int[_height, _width];
+
+        for (var x = 0; x < _height; x ++) 
+        {
+            for (var y = 0; y < _width; y ++) 
+            {
+                if (mapFlags[x, y] == 0 && _map[x, y] == tileType) 
+                {
+                    var newRegion = GetRegionTiles(x, y);
+                    regions.Add(newRegion);
+                    
+                    foreach (var tile in newRegion) 
+                    {
+                        mapFlags[tile.TileX, tile.TileY] = 1;
+                    }
+                }
+            }
+        }
+        return regions;
+    }
+
+    private List<Coord> GetRegionTiles(int startX, int startY) {
+        List<Coord> tiles = new List<Coord> ();
+        var mapFlags = new int[_height, _width];
+        var tileType = _map[startX, startY];
+
+        var queue = new Queue<Coord> ();
+        queue.Enqueue (new Coord (startX, startY));
+        mapFlags [startX, startY] = 1;
+
+        while (queue.Count > 0) 
+        {
+            var tile = queue.Dequeue();
+            tiles.Add(tile);
+
+            for (var x = tile.TileX - 1; x <= tile.TileX + 1; x++) 
+            {
+                for (var y = tile.TileY - 1; y <= tile.TileY + 1; y++) 
+                {
+                    if (IsInMapRange(x,y) && (y == tile.TileY || x == tile.TileX)) 
+                    {
+                        if (mapFlags[x,y] == 0 && _map[x,y] == tileType) 
+                        {
+                            mapFlags[x,y] = 1;
+                            queue.Enqueue(new Coord(x,y));
+                        }
+                    }
+                }
+            }
+        }
+        return tiles;
+    }
+
+    private bool IsInMapRange(int x, int y) {
+        return x >= 0 && x < _height && y >= 0 && y < _width;
+    }
+
     public void PrintMap()
     {
         for(var i = 0; i < _height; i++)
         {
             for(var j = 0; j < _width; j++)
             {
-                Console.Write(_map[i, j] == 1 ? "\u2588" : " ");
+                Console.Write(_map[i, j] == 1 ? "\u2588\u2588" : "  ");
             }
             Console.WriteLine("");
+        }
+    }
+    
+    private class Coord {
+        public int TileX;
+        public int TileY;
+
+        public Coord() {
+        }
+
+        public Coord(int x, int y) {
+            TileX = x;
+            TileY = y;
         }
     }
 }
