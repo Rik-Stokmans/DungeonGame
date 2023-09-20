@@ -5,13 +5,14 @@ namespace DungeonGame;
 class Program
 {
     public static readonly int Seed = CreatePseudoRandomSeed();
-    private static Map map;
+    public static Player Player;
+    private static Dungeon _dungeon;
 
     public static void Main()
     {
-        map = new Map(50, 50, 54);
+        Player = new Player();
         
-        map.PrintMap();
+        _dungeon = new Dungeon();
     }
     
     //function to generate the seed
