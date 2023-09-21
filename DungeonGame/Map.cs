@@ -2,26 +2,35 @@ namespace DungeonGame;
 
 public class Map
 {
-    private int Density;
+    private int _density;
     public int Height;
-
-    int[,] map;
-    private int PathSize = 1;
-    private List<List<Coord>> Regions;
-    private Random Rng = new Random(Program.Seed);
-
     public int Width;
-
+    private int _tileMapHeight;
+    private int _tileMapWidth;
+    public Coord PlayerSpawnTile;
+    public int[,] BitMap = null!;
+    public int[,] TileMap = null!;
+    private readonly List<String[,]> _tiles;
+    private int _pathSize = 1;
+    private List<List<Coord>> _regions = null!;
+    private Random _rng = new Random(Program.Seed);
+    
+    
+    //must be supplied with a width and height that are devisable by 2
     public Map(int width, int height, int density)
     {
-        Density = density;
+        _density = density;
         Width = width;
         Height = height;
+        _tileMapWidth = width - 1;
+        _tileMapHeight = height - 1;
+        _tiles = GenerateTiles();
 
-        bool foundSuitableMap = false;
+        var foundSuitableMap = false;
         while (!foundSuitableMap)
         {
-            map = new int[width, height];
+            BitMap = new int[width, height];
+            TileMap = new int[width - 1, height - 1];
             RandomFillMap();
 
             for (var i = 0; i < 2; i++)
@@ -29,33 +38,136 @@ public class Map
                 SmoothMap();
             }
 
-            Regions = GetRegions(0);
-
-            ProcessMap();
-
-            if (Regions.Count >= Math.Ceiling((double)(Width * Height) / 200)) foundSuitableMap = true;
+            _regions = GetRegions(0);
+            
+            if (_regions.Count >= Math.Ceiling((double)(Width * Height) / 200))
+            {
+                foundSuitableMap = true;
+                ProcessMap();
+                GenerateTileMap(BitMap);
+                
+                PlayerSpawnTile = GeneratePlayerSpawnTile();
+            }
         }
     }
+    
+    void RandomFillMap()
+    {
+        for (var i = 0; i < Width; i++)
+        {
+            for (var j = 0; j < Height; j++)
+            {
+                if (j == 0 || j == Height - 1 || i == 0 || i == Width - 1)
+                {
+                    BitMap[i, j] = 1;
+                }
+                else
+                {
+                    if (_rng.NextDouble() * 100 <= _density) BitMap[i, j] = 1;
+                }
+            }
+        }
+    }
+    
+    private void SmoothMap()
+    {
+        int[,] smoothedMap = new int[Width, Height];
 
+        for (var i = 0; i < Width; i++)
+        {
+            for (var j = 0; j < Height; j++)
+            {
+                var neighbourWallTiles = GetSurroundingWallCount(i, j);
+
+                smoothedMap[i, j] = neighbourWallTiles switch
+                {
+                    > 4 => 1,
+                    < 4 => 0,
+                    _ => smoothedMap[i, j]
+                };
+            }
+        }
+
+        BitMap = smoothedMap;
+    }
+
+    int GetSurroundingWallCount(int gridX, int gridY)
+    {
+        int wallCount = 0;
+        for (int neighbourX = gridX - 1; neighbourX <= gridX + 1; neighbourX++)
+        {
+            for (int neighbourY = gridY - 1; neighbourY <= gridY + 1; neighbourY++)
+            {
+                if (IsInMapRange(neighbourX, neighbourY))
+                {
+                    if (neighbourX != gridX || neighbourY != gridY)
+                    {
+                        wallCount += BitMap[neighbourX, neighbourY];
+                    }
+                }
+                else
+                {
+                    wallCount++;
+                }
+            }
+        }
+
+        return wallCount;
+    }
+    
+    private Coord GeneratePlayerSpawnTile()
+    {
+        var playerSpawn = new Coord(0, 0);
+        
+        for (var j = 0; j < Width - 1; j++)
+        {
+            for (var i = 0; i < Height - 1; i++)
+            {
+                switch (TileMap[i, j])
+                {
+                    case 1:
+                    case 2:
+                    case 4:
+                    case 8:
+                        playerSpawn.TileX = i;
+                        playerSpawn.TileY = j;
+                        return playerSpawn;
+                    case 3:
+                    case 5:
+                    case 10:
+                    case 12:
+                        playerSpawn.TileX = i;
+                        playerSpawn.TileY = j;
+                        return playerSpawn;
+                    case 6:
+                    case 9:
+                        playerSpawn.TileX = i;
+                        playerSpawn.TileY = j;
+                        return playerSpawn;
+                }
+            }
+        }
+        return playerSpawn;
+    }
+    
     void ProcessMap()
     {
-        List<List<Coord>> roomRegions = GetRegions(0);
-        Console.WriteLine(roomRegions.Count);
+        Console.WriteLine(_regions.Count);
         int roomThresholdSize = 4;
         List<Room> survivingRooms = new List<Room>();
 
-        foreach (List<Coord> roomRegion in roomRegions)
+        foreach (List<Coord> roomRegion in _regions)
         {
             if (roomRegion.Count < roomThresholdSize)
             {
                 foreach (Coord tile in roomRegion)
                 {
-                    map[tile.TileX, tile.TileY] = 1;
+                    BitMap[tile.TileX, tile.TileY] = 1;
                 }
             }
             else
             {
-                survivingRooms.Add(new Room(roomRegion, map));
+                survivingRooms.Add(new Room(roomRegion, BitMap));
             }
         }
 
@@ -63,12 +175,75 @@ public class Map
         {
             return;
         }
-
+        
         survivingRooms.Sort();
-        survivingRooms[0].isMainRoom = true;
         survivingRooms[0].IsAccessibleFromMainRoom = true;
 
         ConnectClosestRooms(survivingRooms);
+    }
+    
+    List<List<Coord>> GetRegions(int tileType)
+    {
+        List<List<Coord>> regions = new List<List<Coord>>();
+        int[,] mapFlags = new int[Width, Height];
+
+        for (int x = 0; x < Width; x++)
+        {
+            for (int y = 0; y < Height; y++)
+            {
+                if (mapFlags[x, y] == 0 && BitMap[x, y] == tileType)
+                {
+                    List<Coord> newRegion = GetRegionTiles(x, y);
+                    regions.Add(newRegion);
+
+                    foreach (Coord tile in newRegion)
+                    {
+                        mapFlags[tile.TileX, tile.TileY] = 1;
+                    }
+                }
+            }
+        }
+
+        return regions;
+    }
+    
+    List<Coord> GetRegionTiles(int startX, int startY)
+    {
+        List<Coord> tiles = new List<Coord>();
+        int[,] mapFlags = new int[Width, Height];
+        int tileType = BitMap[startX, startY];
+
+        Queue<Coord> queue = new Queue<Coord>();
+        queue.Enqueue(new Coord(startX, startY));
+        mapFlags[startX, startY] = 1;
+
+        while (queue.Count > 0)
+        {
+            Coord tile = queue.Dequeue();
+            tiles.Add(tile);
+
+            for (int x = tile.TileX - 1; x <= tile.TileX + 1; x++)
+            {
+                for (int y = tile.TileY - 1; y <= tile.TileY + 1; y++)
+                {
+                    if (IsInMapRange(x, y) && (y == tile.TileY || x == tile.TileX))
+                    {
+                        if (mapFlags[x, y] == 0 && BitMap[x, y] == tileType)
+                        {
+                            mapFlags[x, y] = 1;
+                            queue.Enqueue(new Coord(x, y));
+                        }
+                    }
+                }
+            }
+        }
+
+        return tiles;
+    }
+    
+    bool IsInMapRange(int x, int y)
+    {
+        return x >= 0 && x < Width && y >= 0 && y < Height;
     }
 
     void ConnectClosestRooms(List<Room> allRooms, bool forceAccessibilityFromMainRoom = false)
@@ -168,7 +343,7 @@ public class Map
         List<Coord> line = GetLine(tileA, tileB);
         foreach (Coord c in line)
         {
-            DrawCircle(c, PathSize);
+            DrawCircle(c, _pathSize);
         }
     }
 
@@ -184,7 +359,7 @@ public class Map
                     int drawY = c.TileY + y;
                     if (IsInMapRange(drawX, drawY))
                     {
-                        map[drawX, drawY] = 0;
+                        BitMap[drawX, drawY] = 0;
                     }
                 }
             }
@@ -250,152 +425,71 @@ public class Map
 
         return line;
     }
-
-    List<List<Coord>> GetRegions(int tileType)
+    
+    private void GenerateTileMap(int[,] map)
     {
-        List<List<Coord>> regions = new List<List<Coord>>();
-        int[,] mapFlags = new int[Width, Height];
-
-        for (int x = 0; x < Width; x++)
+        for (var i = 0; i < Height - 1; i++)
         {
-            for (int y = 0; y < Height; y++)
+            for (var j = 0; j < Width - 1; j++)
             {
-                if (mapFlags[x, y] == 0 && map[x, y] == tileType)
-                {
-                    List<Coord> newRegion = GetRegionTiles(x, y);
-                    regions.Add(newRegion);
-
-                    foreach (Coord tile in newRegion)
-                    {
-                        mapFlags[tile.TileX, tile.TileY] = 1;
-                    }
-                }
+                TileMap[i, j] = map[i, j] + map[i+1, j]*2 + map[i, j+1]*4 + map[i+1, j+1]*8;
             }
         }
-
-        return regions;
     }
 
-    List<Coord> GetRegionTiles(int startX, int startY)
-    {
-        List<Coord> tiles = new List<Coord>();
-        int[,] mapFlags = new int[Width, Height];
-        int tileType = map[startX, startY];
+    
+    public void PrintTiles(Coord centerTile, int sizeX, int sizeY)
+    {   
+        var printableMapSizeX = _tileMapWidth - (sizeX + 1);
+        var printableMapSizeY = _tileMapHeight - (sizeY + 1);
 
-        Queue<Coord> queue = new Queue<Coord>();
-        queue.Enqueue(new Coord(startX, startY));
-        mapFlags[startX, startY] = 1;
+        if (centerTile.TileX >= printableMapSizeX) centerTile.TileX = printableMapSizeX;
+        if (centerTile.TileY >= printableMapSizeY) centerTile.TileY = printableMapSizeY;
+        if (centerTile.TileX - sizeX < 0) centerTile.TileX = sizeX;
+        if (centerTile.TileY - sizeY < 0) centerTile.TileY = sizeY;
 
-        while (queue.Count > 0)
+        Console.Clear();
+        Console.BackgroundColor = ConsoleColor.White;
+        
+        //prints the tiles that are in the bounds
+        for (var j = 0 - sizeY; j <= sizeY; j++)
         {
-            Coord tile = queue.Dequeue();
-            tiles.Add(tile);
-
-            for (int x = tile.TileX - 1; x <= tile.TileX + 1; x++)
+            for (var y = 0; y < 5; y++)
             {
-                for (int y = tile.TileY - 1; y <= tile.TileY + 1; y++)
+                for (var i = 0 - sizeX; i <= sizeX; i++)
                 {
-                    if (IsInMapRange(x, y) && (y == tile.TileY || x == tile.TileX))
+                    for (var x = 0; x < 5; x++)
                     {
-                        if (mapFlags[x, y] == 0 && map[x, y] == tileType)
+                        if (centerTile.TileX + i == Program.Player.TileLocation.X &&
+                            centerTile.TileY + j == Program.Player.TileLocation.Y &&
+                            x == Program.Player.RelativeLocation.X &&
+                            y == Program.Player.RelativeLocation.Y)
                         {
-                            mapFlags[x, y] = 1;
-                            queue.Enqueue(new Coord(x, y));
+                            Console.ForegroundColor = ConsoleColor.DarkRed;
+                            Console.Write("/\\");
+                            Console.ResetColor();
+                            Console.ForegroundColor = ConsoleColor.DarkBlue;
+                            Console.BackgroundColor = ConsoleColor.White;
+                        }
+                        else
+                        {
+                            Console.Write(_tiles[TileMap[centerTile.TileX + i, centerTile.TileY + j]][y, x]);
                         }
                     }
                 }
-            }
-        }
-
-        return tiles;
-    }
-
-    bool IsInMapRange(int x, int y)
-    {
-        return x >= 0 && x < Width && y >= 0 && y < Height;
-    }
-
-    void RandomFillMap()
-    {
-        for (var i = 0; i < Width; i++)
-        {
-            for (var j = 0; j < Height; j++)
-            {
-                if (j == 0 || j == Height - 1 || i == 0 || i == Width - 1)
-                {
-                    map[i, j] = 1;
-                }
-                else
-                {
-                    if (Rng.NextDouble() * 100 <= Density) map[i, j] = 1;
-                }
-            }
-        }
-    }
-
-    private void SmoothMap()
-    {
-        int[,] smoothedMap = new int[Width, Height];
-
-        for (var i = 0; i < Width; i++)
-        {
-            for (var j = 0; j < Height; j++)
-            {
-                var neighbourWallTiles = GetSurroundingWallCount(i, j);
-
-                smoothedMap[i, j] = neighbourWallTiles switch
-                {
-                    > 4 => 1,
-                    < 4 => 0,
-                    _ => smoothedMap[i, j]
-                };
-            }
-        }
-
-        map = smoothedMap;
-    }
-
-    int GetSurroundingWallCount(int gridX, int gridY)
-    {
-        int wallCount = 0;
-        for (int neighbourX = gridX - 1; neighbourX <= gridX + 1; neighbourX++)
-        {
-            for (int neighbourY = gridY - 1; neighbourY <= gridY + 1; neighbourY++)
-            {
-                if (IsInMapRange(neighbourX, neighbourY))
-                {
-                    if (neighbourX != gridX || neighbourY != gridY)
-                    {
-                        wallCount += map[neighbourX, neighbourY];
-                    }
-                }
-                else
-                {
-                    wallCount++;
-                }
-            }
-        }
-
-        return wallCount;
-    }
-
-    public void PrintMap()
-    {
-        for (var i = 0; i < Width; i++)
-        {
-            for (var j = 0; j < Height; j++)
-            {
-                Console.BackgroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine("");
+                Console.ResetColor();
                 Console.ForegroundColor = ConsoleColor.DarkBlue;
-                Console.Write(map[i, j] == 1 ? "\u2588\u2588" : "  ");
+                Console.BackgroundColor = ConsoleColor.White;
             }
-
-            Console.ResetColor();
-            Console.WriteLine("");
         }
     }
+    
+    
+    
+    
 
-    struct Coord
+    public struct Coord
     {
         public int TileX;
         public int TileY;
@@ -407,16 +501,150 @@ public class Map
         }
     }
 
-    class Room : IComparable<Room>
+    public List<String[,]> GenerateTiles()
     {
-        public List<Room> ConnectedRooms;
-        public List<Coord> EdgeTiles;
-        public bool IsAccessibleFromMainRoom;
-        public bool isMainRoom;
-        public int RoomSize;
-        public List<Coord> Tiles;
+        var tiles = new List<String[,]>();
+        
+        tiles.Add(new[,]
+        {
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "}
+        });
+        tiles.Add(new[,]
+        {
+            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
+            {"\u2588\u2588","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "}
+        });
+        tiles.Add(new[,]
+        {
+            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
+            {"  ","  ","  ","  ","\u2588\u2588"},
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "}
+        });
+        tiles.Add(new[,]
+        {
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "}
+        });
+        tiles.Add(new[,]
+        {
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "},
+            {"\u2588\u2588","  ","  ","  ","  "},
+            {"\u2588\u2588","\u2588\u2588","  ","  ","  "}
+        });
+        tiles.Add(new[,]
+        {
+            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
+            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
+            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
+            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
+            {"\u2588\u2588","\u2588\u2588","  ","  ","  "}
+        });
+        tiles.Add(new[,]
+        {
+            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
+            {"  ","  ","  ","  ","\u2588\u2588"},
+            {"  ","  ","  ","  ","  "},
+            {"\u2588\u2588","  ","  ","  ","  "},
+            {"\u2588\u2588","\u2588\u2588","  ","  ","  "}
+        });
+        tiles.Add(new[,]
+        {
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","  ","  "},
+            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
+            {"\u2588\u2588","\u2588\u2588","  ","  ","  "}
+        });
+        tiles.Add(new[,]
+        {
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","\u2588\u2588"},
+            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"}
+        });
+        tiles.Add(new[,]
+        {
+            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
+            {"\u2588\u2588","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","\u2588\u2588"},
+            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"}
+        });
+        tiles.Add(new[,]
+        {
+            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
+            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
+            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
+            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
+            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"}
+        });
+        tiles.Add(new[,]
+        {
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"  ","  ","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
+            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"}
+        });
+        tiles.Add(new[,]
+        {
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "},
+            {"  ","  ","  ","  ","  "},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"}
+        });
+        tiles.Add(new[,]
+        {
+            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
+            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","  ","  "},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"}
+        });
+        tiles.Add(new[,]
+        {
+            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
+            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
+            {"  ","  ","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"}
+        });
+        tiles.Add(new[,]
+        {
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
+            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"}
+        });
+        return tiles;
+    }
 
-        public Room()
+    private class Room : IComparable<Room>
+    {
+        public List<Room> ConnectedRooms = null!;
+        public List<Coord> EdgeTiles = null!;
+        public bool IsAccessibleFromMainRoom;
+        public int RoomSize;
+        public List<Coord> Tiles = null!;
+
+        public Room() 
         {
         }
 
@@ -445,9 +673,9 @@ public class Map
             }
         }
 
-        public int CompareTo(Room otherRoom)
+        public int CompareTo(Room? otherRoom)
         {
-            return otherRoom.RoomSize.CompareTo(RoomSize);
+            return otherRoom!.RoomSize.CompareTo(RoomSize);
         }
 
         public void SetAccessibleFromMainRoom()

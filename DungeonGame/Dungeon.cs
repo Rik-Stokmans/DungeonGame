@@ -2,13 +2,13 @@ namespace DungeonGame;
 
 public class Dungeon
 {
-    private Map _map;
-    private List<Enemy> _enemies = new ();
+    public Map Map;
+    public List<Enemy> Enemies = new ();
     
-    public Dungeon()
+    public Dungeon(int width, int height, int density)
     {
         //generates the map
-        _map = new Map(50, 50, 54);
+        Map = new Map(width, height, density);
         
         //spawns the enemies
         GenerateEnemies();
@@ -16,7 +16,7 @@ public class Dungeon
 
     private void GenerateEnemies()
     {
-        _enemies.Add(new Enemy());
+        Enemies.Add(new Enemy());
     }
     
 }
