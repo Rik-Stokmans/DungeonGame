@@ -10,21 +10,23 @@ public class Map
     public Coord PlayerSpawnTile;
     public int[,] BitMap = null!;
     public int[,] TileMap = null!;
-    private readonly List<String[,]> _tiles;
-    private int _pathSize = 1;
+    public readonly List<String[,]> Tiles;
+    private const int PathSize = 1;
     private List<List<Coord>> _regions = null!;
-    private Random _rng = new Random(Program.Seed);
+    private Random _rng = new(Program.Seed);
+    private const int RoomDensity = 200;
+    public static readonly String VoidTile = "  ";
+    public static readonly String WallTile = "\u2588\u2588";
     
     
-    //must be supplied with a width and height that are devisable by 2
     public Map(int width, int height, int density)
-    {
+    { 
         _density = density;
         Width = width;
         Height = height;
         _tileMapWidth = width - 1;
         _tileMapHeight = height - 1;
-        _tiles = GenerateTiles();
+        Tiles = GenerateTiles();
 
         var foundSuitableMap = false;
         while (!foundSuitableMap)
@@ -40,7 +42,7 @@ public class Map
 
             _regions = GetRegions(0);
             
-            if (_regions.Count >= Math.Ceiling((double)(Width * Height) / 200))
+            if (_regions.Count >= Math.Ceiling((double)(Width * Height) / RoomDensity))
             {
                 foundSuitableMap = true;
                 ProcessMap();
@@ -226,6 +228,7 @@ public class Map
             {
                 for (int y = tile.TileY - 1; y <= tile.TileY + 1; y++)
                 {
+                    //TODO
                     if (IsInMapRange(x, y) && (y == tile.TileY || x == tile.TileX))
                     {
                         if (mapFlags[x, y] == 0 && BitMap[x, y] == tileType)
@@ -343,7 +346,7 @@ public class Map
         List<Coord> line = GetLine(tileA, tileB);
         foreach (Coord c in line)
         {
-            DrawCircle(c, _pathSize);
+            DrawCircle(c, PathSize);
         }
     }
 
@@ -449,6 +452,7 @@ public class Map
         if (centerTile.TileY - sizeY < 0) centerTile.TileY = sizeY;
 
         Console.Clear();
+        Console.ForegroundColor = ConsoleColor.DarkBlue;
         Console.BackgroundColor = ConsoleColor.White;
         
         //prints the tiles that are in the bounds
@@ -467,28 +471,20 @@ public class Map
                         {
                             Console.ForegroundColor = ConsoleColor.DarkRed;
                             Console.Write("/\\");
-                            Console.ResetColor();
                             Console.ForegroundColor = ConsoleColor.DarkBlue;
                             Console.BackgroundColor = ConsoleColor.White;
                         }
                         else
                         {
-                            Console.Write(_tiles[TileMap[centerTile.TileX + i, centerTile.TileY + j]][y, x]);
+                            Console.Write(Tiles[TileMap[centerTile.TileX + i, centerTile.TileY + j]][y, x]);
                         }
                     }
                 }
                 Console.WriteLine("");
-                Console.ResetColor();
-                Console.ForegroundColor = ConsoleColor.DarkBlue;
-                Console.BackgroundColor = ConsoleColor.White;
             }
         }
     }
     
-    
-    
-    
-
     public struct Coord
     {
         public int TileX;
@@ -507,131 +503,131 @@ public class Map
         
         tiles.Add(new[,]
         {
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "}
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile}
         });
         tiles.Add(new[,]
         {
-            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
-            {"\u2588\u2588","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "}
+            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
+            {WallTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile}
         });
         tiles.Add(new[,]
         {
-            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
-            {"  ","  ","  ","  ","\u2588\u2588"},
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "}
+            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,WallTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile}
         });
         tiles.Add(new[,]
         {
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "}
+            {WallTile,WallTile,WallTile,WallTile,WallTile},
+            {WallTile,WallTile,WallTile,WallTile,WallTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile}
         });
         tiles.Add(new[,]
         {
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "},
-            {"\u2588\u2588","  ","  ","  ","  "},
-            {"\u2588\u2588","\u2588\u2588","  ","  ","  "}
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {WallTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {WallTile,WallTile,VoidTile,VoidTile,VoidTile}
         });
         tiles.Add(new[,]
         {
-            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
-            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
-            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
-            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
-            {"\u2588\u2588","\u2588\u2588","  ","  ","  "}
+            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
+            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
+            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
+            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
+            {WallTile,WallTile,VoidTile,VoidTile,VoidTile}
         });
         tiles.Add(new[,]
         {
-            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
-            {"  ","  ","  ","  ","\u2588\u2588"},
-            {"  ","  ","  ","  ","  "},
-            {"\u2588\u2588","  ","  ","  ","  "},
-            {"\u2588\u2588","\u2588\u2588","  ","  ","  "}
+            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,WallTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {WallTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {WallTile,WallTile,VoidTile,VoidTile,VoidTile}
         });
         tiles.Add(new[,]
         {
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","  ","  "},
-            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
-            {"\u2588\u2588","\u2588\u2588","  ","  ","  "}
+            {WallTile,WallTile,WallTile,WallTile,WallTile},
+            {WallTile,WallTile,WallTile,WallTile,WallTile},
+            {WallTile,WallTile,WallTile,VoidTile,VoidTile},
+            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
+            {WallTile,WallTile,VoidTile,VoidTile,VoidTile}
         });
         tiles.Add(new[,]
         {
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","\u2588\u2588"},
-            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"}
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,WallTile},
+            {VoidTile,VoidTile,VoidTile,WallTile,WallTile}
         });
         tiles.Add(new[,]
         {
-            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
-            {"\u2588\u2588","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","\u2588\u2588"},
-            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"}
+            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
+            {WallTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,WallTile},
+            {VoidTile,VoidTile,VoidTile,WallTile,WallTile}
         });
         tiles.Add(new[,]
         {
-            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
-            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
-            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
-            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
-            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"}
+            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
+            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
+            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
+            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
+            {VoidTile,VoidTile,VoidTile,WallTile,WallTile}
         });
         tiles.Add(new[,]
         {
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"  ","  ","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
-            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"}
+            {WallTile,WallTile,WallTile,WallTile,WallTile},
+            {WallTile,WallTile,WallTile,WallTile,WallTile},
+            {VoidTile,VoidTile,WallTile,WallTile,WallTile},
+            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
+            {VoidTile,VoidTile,VoidTile,WallTile,WallTile}
         });
         tiles.Add(new[,]
         {
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "},
-            {"  ","  ","  ","  ","  "},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"}
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
+            {WallTile,WallTile,WallTile,WallTile,WallTile},
+            {WallTile,WallTile,WallTile,WallTile,WallTile}
         });
         tiles.Add(new[,]
         {
-            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
-            {"\u2588\u2588","\u2588\u2588","  ","  ","  "},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","  ","  "},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"}
+            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
+            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
+            {WallTile,WallTile,WallTile,VoidTile,VoidTile},
+            {WallTile,WallTile,WallTile,WallTile,WallTile},
+            {WallTile,WallTile,WallTile,WallTile,WallTile}
         });
         tiles.Add(new[,]
         {
-            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
-            {"  ","  ","  ","\u2588\u2588","\u2588\u2588"},
-            {"  ","  ","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"}
+            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
+            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
+            {VoidTile,VoidTile,WallTile,WallTile,WallTile},
+            {WallTile,WallTile,WallTile,WallTile,WallTile},
+            {WallTile,WallTile,WallTile,WallTile,WallTile}
         });
         tiles.Add(new[,]
         {
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"},
-            {"\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588","\u2588\u2588"}
+            {WallTile,WallTile,WallTile,WallTile,WallTile},
+            {WallTile,WallTile,WallTile,WallTile,WallTile},
+            {WallTile,WallTile,WallTile,WallTile,WallTile},
+            {WallTile,WallTile,WallTile,WallTile,WallTile},
+            {WallTile,WallTile,WallTile,WallTile,WallTile}
         });
         return tiles;
     }
