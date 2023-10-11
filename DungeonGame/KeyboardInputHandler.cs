@@ -1,16 +1,14 @@
 namespace DungeonGame;
 
-public class KeyboardInputHandler
+public static class KeyboardInputHandler
 {
     
-    public static void HandleInput(Player player, Dungeon dungeon)
+    //returns true if the player loaded new chunks
+    public static bool HandleInput(Player player, Dungeon dungeon)
     {
-        //check if there is a key available
-        if (!Console.KeyAvailable) return; 
-        
         var map = dungeon.Map;
         var key = Console.ReadKey().Key;
-        var currentTile = map.Tiles[map.TileMap[player.TileLocation.X, player.TileLocation.Y]];
+        var currentTile = Map.Tiles[map.TileMap[player.TileLocation.X, player.TileLocation.Y]];
         
         switch (key)
         {
@@ -29,7 +27,7 @@ public class KeyboardInputHandler
                     case 0:
                         player.RelativeLocation.Y = 4;
                         player.TileLocation.Y--;
-                        break;
+                        return true;
                 }
                 break;
             //Movement Down
@@ -47,7 +45,7 @@ public class KeyboardInputHandler
                     case 4:
                         player.RelativeLocation.Y = 0;
                         player.TileLocation.Y++;
-                        break;
+                        return true;
                 }
                 break;
             //Movement Left
@@ -65,7 +63,7 @@ public class KeyboardInputHandler
                     case 0:
                         player.RelativeLocation.X = 4;
                         player.TileLocation.X--;
-                        break;
+                        return true;
                 }
                 break;
             //Movement Right
@@ -83,9 +81,10 @@ public class KeyboardInputHandler
                     case 4:
                         player.RelativeLocation.X = 0;
                         player.TileLocation.X++;
-                        break;
+                        return true;
                 }
                 break;
         }
+        return false;
     }
 }

@@ -8,7 +8,8 @@ static class Program
 {
     public static readonly int Seed = CreatePseudoRandomSeed();
     public static Player Player;
-    public static Dungeon _dungeon;
+    public static Dungeon Dungeon;
+    public static readonly int RenderDistance = 1;
 
     private static readonly String MainDungeonMusicFile =
         "/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/sounds/Ruins.wav";
@@ -21,55 +22,46 @@ static class Program
 
     public static void Main()
     {
-        _dungeon = new Dungeon(50, 50, 54);
+        //generate the dungeon and the player
+        Dungeon = new Dungeon(50, 50, 54);
+        Player = new Player(new Location(Dungeon.Map.PlayerSpawnTile.TileX, Dungeon.Map.PlayerSpawnTile.TileY), new Location(2, 2));
         
-        Player = new Player(new Location(_dungeon.Map.PlayerSpawnTile.TileX, _dungeon.Map.PlayerSpawnTile.TileY), new Location(2, 2));
-        
-        //prints the entire map
-        _dungeon.Map.PrintTiles(new Map.Coord(0, 0), 24, 24);
+        //render the new map
+        Dungeon.Map.PrintTiles(new Map.Coord(Player.TileLocation.X, Player.TileLocation.Y), 1 + RenderDistance*2, 1 + RenderDistance*2);
         
         
-        Thread updateLoop = new Thread(new ThreadStart(UpdateLoopWorker));
-        updateLoop.Start();
-        
-        Thread renderLoop = new Thread(new ThreadStart(RendererWorker));
-        renderLoop.Start();
+        Thread gameLoop = new Thread(new ThreadStart(GameLoopWorker));
+        gameLoop.Start();
         
         Thread musicPlayer = new Thread(new ThreadStart(MusicPlayerWorker));
-        musicPlayer.Start();
+        //musicPlayer.Start(); //temporarily disabled
         
-        void RendererWorker() {
+        void GameLoopWorker() {
             while (true)
             {
-                _dungeon.Map.PrintTiles(new Map.Coord(Player.TileLocation.X, Player.TileLocation.Y), 3, 3);
-                Thread.Sleep(50);
+                //await a player movement (returns true if the player loaded new chunks)
+                if (KeyboardInputHandler.HandleInput(Player, Dungeon))
+                {
+                    //handle chunk loading (eg. enemy spawns)
+                    Console.WriteLine("loaded new chunks");
+                }
+                
+                //render the new map
+                Dungeon.Map.PrintTiles(new Map.Coord(Player.TileLocation.X, Player.TileLocation.Y), 1 + RenderDistance*2, 1 + RenderDistance*2);
             }
         }
         
-        void UpdateLoopWorker() {
-            while (true)
-            {
-                KeyboardInputHandler.HandleInput(Player, _dungeon);
-                Thread.Sleep(50);
-            }
-        }
 
         async void MusicPlayerWorker()
         {
             while (true)
             {
-                //await Audio.Play(SaveTheWorldMusicFile, new PlaybackOptions { Rate = 0.5, Quality = 1, Time = 0});
+                await Audio.Play(MainDungeonMusicFile, new PlaybackOptions { Rate = 0.5, Quality = 1, Time = 0});
+                await Audio.Play(SaveTheWorldMusicFile, new PlaybackOptions { Rate = 0.5, Quality = 1, Time = 0});
                 await Audio.Play(DatingFightMusicFile, new PlaybackOptions { Rate = 0.5, Quality = 1, Time = 0});
                 await Audio.Play(EnemyApproachingMusicFile, new PlaybackOptions { Rate = 0.5, Quality = 1, Time = 0});
-                await Audio.Play(MainDungeonMusicFile, new PlaybackOptions { Rate = 0.5, Quality = 1, Time = 0});
             }
         }
-        
-        
-        
-        _dungeon.Map.PrintTiles(new Map.Coord(Player.TileLocation.X, Player.TileLocation.Y), 5, 5);
-        ////update loop //TODO: make thread for this && add render loop
-        
     }
     
     

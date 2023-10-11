@@ -10,23 +10,23 @@ public class Map
     public Coord PlayerSpawnTile;
     public int[,] BitMap = null!;
     public int[,] TileMap = null!;
-    public readonly List<String[,]> Tiles;
+    public bool[,] UnloadedTiles = null!;
+    public static List<String[,]> Tiles = null!;
     private const int PathSize = 1;
     private List<List<Coord>> _regions = null!;
-    private Random _rng = new(Program.Seed);
     private const int RoomDensity = 200;
     public static readonly String VoidTile = "  ";
     public static readonly String WallTile = "\u2588\u2588";
-    
+    public static Random Rng = new(Program.Seed);
     
     public Map(int width, int height, int density)
     { 
+        Tiles = GenerateTiles();
         _density = density;
         Width = width;
         Height = height;
         _tileMapWidth = width - 1;
         _tileMapHeight = height - 1;
-        Tiles = GenerateTiles();
 
         var foundSuitableMap = false;
         while (!foundSuitableMap)
@@ -41,14 +41,28 @@ public class Map
             }
 
             _regions = GetRegions(0);
-            
+
             if (_regions.Count >= Math.Ceiling((double)(Width * Height) / RoomDensity))
             {
                 foundSuitableMap = true;
                 ProcessMap();
                 GenerateTileMap(BitMap);
-                
+
                 PlayerSpawnTile = GeneratePlayerSpawnTile();
+            }
+
+            UnloadedTiles = new bool[Width - 1, Height - 1];
+            for (var i = 0; i < Width - 1; i++)
+            {
+                for (var j = 0; j < Height - 1; j++)
+                {
+                    if (TileMap[i, j] == 15)
+                    {
+                        UnloadedTiles[i, j] = true;
+                    } else {
+                        UnloadedTiles[i, j] = false;
+                    }
+                }
             }
         }
     }
@@ -65,7 +79,7 @@ public class Map
                 }
                 else
                 {
-                    if (_rng.NextDouble() * 100 <= _density) BitMap[i, j] = 1;
+                    if (Rng.NextDouble() * 100 <= _density) BitMap[i, j] = 1;
                 }
             }
         }
@@ -494,7 +508,7 @@ public class Map
         }
     }
 
-    public List<String[,]> GenerateTiles()
+    public static List<String[,]> GenerateTiles()
     {
         var tiles = new List<String[,]>();
         
