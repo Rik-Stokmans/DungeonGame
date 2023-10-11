@@ -13,3 +13,5 @@
 /Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/obj/Debug/net7.0/DungeonGame.pdb
 /Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/obj/Debug/net7.0/DungeonGame.genruntimeconfig.cache
 /Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/obj/Debug/net7.0/ref/DungeonGame.dll
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/bin/Debug/net7.0/CliWrap.dll
+/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/obj/Debug/net7.0/DungeonGame.csproj.CopyComplete

@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "+r0trKrjvdqRo0BEjvSNCyo1wXEX4qCqaFh7DaEno4sNtRxpsgswEJRX+XirgbktpSG2dfGYm6sBLKYiZfiogA==",
+  "dgSpecHash": "/kkJ4+pLFqEyWzd78Apt75Qf3wkjK/KmV+HfTByA0//i5xXqJL9Ff4MSP7HsG5d0J2p4K2sbK+I9+/WIfmcpOA==",
   "success": true,
   "projectFilePath": "/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/DungeonGame.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "/Users/rikstokmans/.nuget/packages/cliwrap/3.6.4/cliwrap.3.6.4.nupkg.sha512"
+  ],
   "logs": []
 }

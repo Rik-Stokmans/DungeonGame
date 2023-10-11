@@ -189,9 +189,9 @@ public class Map
         List<List<Coord>> regions = new List<List<Coord>>();
         int[,] mapFlags = new int[Width, Height];
 
-        for (int x = 0; x < Width; x++)
+        for (var x = 0; x < Width; x++)
         {
-            for (int y = 0; y < Height; y++)
+            for (var y = 0; y < Height; y++)
             {
                 if (mapFlags[x, y] == 0 && BitMap[x, y] == tileType)
                 {
@@ -205,30 +205,28 @@ public class Map
                 }
             }
         }
-
         return regions;
     }
     
     List<Coord> GetRegionTiles(int startX, int startY)
     {
         List<Coord> tiles = new List<Coord>();
-        int[,] mapFlags = new int[Width, Height];
-        int tileType = BitMap[startX, startY];
+        var mapFlags = new int[Width, Height];
+        var tileType = BitMap[startX, startY];
 
-        Queue<Coord> queue = new Queue<Coord>();
+        var queue = new Queue<Coord>();
         queue.Enqueue(new Coord(startX, startY));
         mapFlags[startX, startY] = 1;
-
+        
         while (queue.Count > 0)
         {
             Coord tile = queue.Dequeue();
             tiles.Add(tile);
 
-            for (int x = tile.TileX - 1; x <= tile.TileX + 1; x++)
+            for (var x = tile.TileX - 1; x <= tile.TileX + 1; x++)
             {
-                for (int y = tile.TileY - 1; y <= tile.TileY + 1; y++)
+                for (var y = tile.TileY - 1; y <= tile.TileY + 1; y++)
                 {
-                    //TODO
                     if (IsInMapRange(x, y) && (y == tile.TileY || x == tile.TileX))
                     {
                         if (mapFlags[x, y] == 0 && BitMap[x, y] == tileType)
@@ -240,7 +238,6 @@ public class Map
                 }
             }
         }
-
         return tiles;
     }
     
