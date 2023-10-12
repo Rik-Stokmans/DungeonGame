@@ -40,10 +40,18 @@ static class Program
             while (true)
             {
                 //await a player movement (returns true if the player loaded new chunks)
-                if (KeyboardInputHandler.HandleInput(Player, Dungeon))
+                List<Location> chunksToBeLoaded = KeyboardInputHandler.HandleInput(Player, Dungeon);
+                if (chunksToBeLoaded.Count > 0)
                 {
+                    Console.WriteLine("loaded new chunks"); //temp
+                    
                     //handle chunk loading (eg. enemy spawns)
-                    Console.WriteLine("loaded new chunks");
+                    foreach (var loc in chunksToBeLoaded)
+                    {
+                        Dungeon.Map.LoadedChunks[loc.X, loc.Y] = true;
+                        Console.WriteLine("loaded chunk at " + loc.X + ", " + loc.Y); //temp
+                        Dungeon.Map.SpawnEnemyInChunk(loc);
+                    }
                 }
                 
                 //render the new map

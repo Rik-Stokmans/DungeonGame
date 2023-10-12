@@ -4,7 +4,7 @@ public static class KeyboardInputHandler
 {
     
     //returns true if the player loaded new chunks
-    public static bool HandleInput(Player player, Dungeon dungeon)
+    public static List<Location> HandleInput(Player player, Dungeon dungeon)
     {
         var map = dungeon.Map;
         var key = Console.ReadKey().Key;
@@ -13,43 +13,101 @@ public static class KeyboardInputHandler
         switch (key)
         {
             //Movement Up
-            case ConsoleKey.W:
+            case ConsoleKey.W or ConsoleKey.UpArrow:
+                Location tile;
+                Location location1Above;
+                bool playerCanMakeMove;
                 switch (player.RelativeLocation.Y)
                 {
                     case > 0 and <= 4:
                     {
-                        if (currentTile[player.RelativeLocation.Y - 1, player.RelativeLocation.X] == "  ")
+                        playerCanMakeMove = true;
+                        
+                        //check if the tile above the player is empty
+                        tile = player.TileLocation;
+                        location1Above = new Location(player.RelativeLocation.X, player.RelativeLocation.Y - 1);
+
+                        //checks if there is an enemy or wall above the player
+                        foreach (var enemy in map.enemies)
                         {
-                            player.RelativeLocation.Y--;
+                            if (enemy.TileLocation.isSameLocation(tile) && enemy.RelativeLocation.isSameLocation(location1Above)) playerCanMakeMove = false;
                         }
+                        
+                        if (currentTile[player.RelativeLocation.Y - 1, player.RelativeLocation.X] == Map.WallTile) playerCanMakeMove = false;
+                        
+                        //makes the move
+                        if (playerCanMakeMove) player.RelativeLocation.Y--;
                         break;
                     }
                     case 0:
-                        player.RelativeLocation.Y = 4;
-                        player.TileLocation.Y--;
-                        return true;
+                        playerCanMakeMove = true;
+                        
+                        //check if the tile above the player is empty
+                        tile = new Location(player.TileLocation.X, player.TileLocation.Y - 1);;
+                        location1Above = new Location(player.RelativeLocation.X, 4);
+                        
+                        foreach (var enemy in map.enemies)
+                        {
+                            if (enemy.TileLocation.isSameLocation(tile) && enemy.RelativeLocation.isSameLocation(location1Above)) playerCanMakeMove = false;
+                        }
+
+                        if (playerCanMakeMove)
+                        {
+                            player.RelativeLocation.Y = 4;
+                            player.TileLocation.Y--;
+                            return ChunksToBeLoaded(player, dungeon);
+                        }
+                        break;
                 }
                 break;
             //Movement Down
-            case ConsoleKey.S:
+            case ConsoleKey.S or ConsoleKey.DownArrow:
+                Location location1Below;
                 switch (player.RelativeLocation.Y)
                 {
                     case >= 0 and < 4:
                     {
-                        if (currentTile[player.RelativeLocation.Y + 1, player.RelativeLocation.X] == "  ")
+                        playerCanMakeMove = true;
+                        
+                        //check if the tile above the player is empty
+                        tile = player.TileLocation;
+                        location1Below = new Location(player.RelativeLocation.X, player.RelativeLocation.Y + 1);
+
+                        //checks if there is an enemy or wall above the player
+                        foreach (var enemy in map.enemies)
                         {
-                            player.RelativeLocation.Y++;
+                            if (enemy.TileLocation.isSameLocation(tile) && enemy.RelativeLocation.isSameLocation(location1Below)) playerCanMakeMove = false;
                         }
+                        
+                        if (currentTile[player.RelativeLocation.Y + 1, player.RelativeLocation.X] == Map.WallTile) playerCanMakeMove = false;
+                        
+                        //makes the move
+                        if (playerCanMakeMove) player.RelativeLocation.Y++;
                         break;
                     }
                     case 4:
-                        player.RelativeLocation.Y = 0;
-                        player.TileLocation.Y++;
-                        return true;
+                        playerCanMakeMove = true;
+                        
+                        //check if the tile above the player is empty
+                        tile = new Location(player.TileLocation.X, player.TileLocation.Y + 1);;
+                        location1Below = new Location(player.RelativeLocation.X, 0);
+                        
+                        foreach (var enemy in map.enemies)
+                        {
+                            if (enemy.TileLocation.isSameLocation(tile) && enemy.RelativeLocation.isSameLocation(location1Below)) playerCanMakeMove = false;
+                        }
+
+                        if (playerCanMakeMove)
+                        {
+                            player.RelativeLocation.Y = 0;
+                            player.TileLocation.Y++;
+                            return ChunksToBeLoaded(player, dungeon);
+                        }
+                        break;
                 }
                 break;
             //Movement Left
-            case ConsoleKey.A:
+            case ConsoleKey.A or ConsoleKey.LeftArrow:
                 switch (player.RelativeLocation.X)
                 {
                     case > 0 and <= 4:
@@ -63,11 +121,11 @@ public static class KeyboardInputHandler
                     case 0:
                         player.RelativeLocation.X = 4;
                         player.TileLocation.X--;
-                        return true;
+                        return ChunksToBeLoaded(player, dungeon);
                 }
                 break;
             //Movement Right
-            case ConsoleKey.D:
+            case ConsoleKey.D or ConsoleKey.RightArrow:
                 switch (player.RelativeLocation.X)
                 {
                     case >= 0 and < 4:
@@ -81,10 +139,50 @@ public static class KeyboardInputHandler
                     case 4:
                         player.RelativeLocation.X = 0;
                         player.TileLocation.X++;
-                        return true;
+                        return ChunksToBeLoaded(player, dungeon);
                 }
                 break;
         }
-        return false;
+        return new List<Location>();
+    }
+
+    public static List<Location> ChunksToBeLoaded(Player player, Dungeon dungeon)
+    {
+        List<Location> chunksToBeLoaded = new List<Location>();
+        Map map = dungeon.Map;
+        
+        for (var i = player.TileLocation.X - 1; i <= player.TileLocation.X + 1; i++)
+        {
+            for (var j = player.TileLocation.Y - 1; j <= player.TileLocation.Y + 1; j++)
+            {
+                //check if the chunk is inside the map
+                if (i >= 0 && i < map.TileMap.GetLength(0) && j >= 0 && j < map.TileMap.GetLength(1))
+                {
+                    if (!map.LoadedChunks[i, j])
+                    {
+                        chunksToBeLoaded.Add(new Location(i, j));
+                    }
+                }
+            }
+        }
+        return chunksToBeLoaded;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

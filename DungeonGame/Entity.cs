@@ -48,6 +48,10 @@ public class Location
         Y = 0;
     }
     
+    public bool isSameLocation(Location location)
+    {
+        return X == location.X && Y == location.Y;
+    }
     
 }
 

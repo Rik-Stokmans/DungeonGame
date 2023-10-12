@@ -10,8 +10,9 @@ public class Map
     public Coord PlayerSpawnTile;
     public int[,] BitMap = null!;
     public int[,] TileMap = null!;
-    public bool[,] UnloadedTiles = null!;
+    public bool[,] LoadedChunks = null!;
     public static List<String[,]> Tiles = null!;
+    public List<Enemy> enemies = new();
     private const int PathSize = 1;
     private List<List<Coord>> _regions = null!;
     private const int RoomDensity = 200;
@@ -51,16 +52,16 @@ public class Map
                 PlayerSpawnTile = GeneratePlayerSpawnTile();
             }
 
-            UnloadedTiles = new bool[Width - 1, Height - 1];
+            LoadedChunks = new bool[Width - 1, Height - 1];
             for (var i = 0; i < Width - 1; i++)
             {
                 for (var j = 0; j < Height - 1; j++)
                 {
                     if (TileMap[i, j] == 15)
                     {
-                        UnloadedTiles[i, j] = true;
+                        LoadedChunks[i, j] = true;
                     } else {
-                        UnloadedTiles[i, j] = false;
+                        LoadedChunks[i, j] = false;
                     }
                 }
             }
@@ -475,6 +476,22 @@ public class Map
                 {
                     for (var x = 0; x < 5; x++)
                     {
+                        var emptyTile = true;
+                        foreach (var enemy in enemies)
+                        {
+                            if (centerTile.TileX + i == enemy.TileLocation.X &&
+                                centerTile.TileY + j == enemy.TileLocation.Y &&
+                                x == enemy.RelativeLocation.X &&
+                                y == enemy.RelativeLocation.Y)
+                            {
+                                Console.ForegroundColor = ConsoleColor.DarkRed;
+                                Console.Write("GG");
+                                Console.ForegroundColor = ConsoleColor.DarkBlue;
+                                Console.BackgroundColor = ConsoleColor.White;
+                                emptyTile = false;
+                            }
+                        }
+                        
                         if (centerTile.TileX + i == Program.Player.TileLocation.X &&
                             centerTile.TileY + j == Program.Player.TileLocation.Y &&
                             x == Program.Player.RelativeLocation.X &&
@@ -484,8 +501,9 @@ public class Map
                             Console.Write("/\\");
                             Console.ForegroundColor = ConsoleColor.DarkBlue;
                             Console.BackgroundColor = ConsoleColor.White;
+                            emptyTile = false;
                         }
-                        else
+                        if (emptyTile)
                         {
                             Console.Write(Tiles[TileMap[centerTile.TileX + i, centerTile.TileY + j]][y, x]);
                         }
@@ -494,6 +512,11 @@ public class Map
                 Console.WriteLine("");
             }
         }
+    }
+
+    public void SpawnEnemyInChunk(Location chunk)
+    {
+        enemies.Add(new Enemy(chunk, TileMap[chunk.X,chunk.Y], Enemy.EnemyType.Goblin));
     }
     
     public struct Coord
