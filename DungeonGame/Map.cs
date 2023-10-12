@@ -468,6 +468,7 @@ public class Map
         Console.BackgroundColor = ConsoleColor.White;
         
         //prints the tiles that are in the bounds
+        List<Enemy> tempEnemyList = new List<Enemy>(enemies);
         for (var j = 0 - sizeY; j <= sizeY; j++)
         {
             for (var y = 0; y < 5; y++)
@@ -477,7 +478,7 @@ public class Map
                     for (var x = 0; x < 5; x++)
                     {
                         var emptyTile = true;
-                        foreach (var enemy in enemies)
+                        foreach (var enemy in tempEnemyList)
                         {
                             if (centerTile.TileX + i == enemy.TileLocation.X &&
                                 centerTile.TileY + j == enemy.TileLocation.Y &&
@@ -485,10 +486,12 @@ public class Map
                                 y == enemy.RelativeLocation.Y)
                             {
                                 Console.ForegroundColor = ConsoleColor.DarkRed;
-                                Console.Write("GG");
+                                Console.Write("O/");
                                 Console.ForegroundColor = ConsoleColor.DarkBlue;
                                 Console.BackgroundColor = ConsoleColor.White;
                                 emptyTile = false;
+                                tempEnemyList.Remove(enemy);
+                                break;
                             }
                         }
                         
@@ -497,8 +500,9 @@ public class Map
                             x == Program.Player.RelativeLocation.X &&
                             y == Program.Player.RelativeLocation.Y)
                         {
-                            Console.ForegroundColor = ConsoleColor.DarkRed;
-                            Console.Write("/\\");
+                            Console.ForegroundColor = ConsoleColor.Black;
+                            if (KeyboardInputHandler.LastMoveLeftRight == 'a') Console.Write("\\O");
+                            else if (KeyboardInputHandler.LastMoveLeftRight == 'd') Console.Write("O/");
                             Console.ForegroundColor = ConsoleColor.DarkBlue;
                             Console.BackgroundColor = ConsoleColor.White;
                             emptyTile = false;
@@ -514,9 +518,9 @@ public class Map
         }
     }
 
-    public void SpawnEnemyInChunk(Location chunk)
+    public void SpawnEnemiesInChunk(Location chunk)
     {
-        enemies.Add(new Enemy(chunk, TileMap[chunk.X,chunk.Y], Enemy.EnemyType.Goblin));
+        if (Rng.NextDouble()*2 <= 1) enemies.Add(new Enemy(chunk, TileMap[chunk.X,chunk.Y], Enemy.EnemyType.Goblin));
     }
     
     public struct Coord

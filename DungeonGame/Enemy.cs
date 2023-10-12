@@ -29,7 +29,10 @@ public class Enemy : Entity
         {
             var x = Map.Rng.Next(0, 5);
             var y = Map.Rng.Next(0, 5);
-            if (Map.Tiles[tileType][y, x] == Map.VoidTile) return new Location(x, y);
+            if (Map.Tiles[tileType][y, x] == Map.VoidTile)
+            {
+                return new Location(x, y);
+            }
         }
         
     }

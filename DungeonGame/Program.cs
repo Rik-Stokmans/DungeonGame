@@ -9,7 +9,7 @@ static class Program
     public static readonly int Seed = CreatePseudoRandomSeed();
     public static Player Player;
     public static Dungeon Dungeon;
-    public static readonly int RenderDistance = 1;
+    public static readonly int RenderDistance = 2;
 
     private static readonly String MainDungeonMusicFile =
         "/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/sounds/Ruins.wav";
@@ -19,6 +19,8 @@ static class Program
         "/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/sounds/DatingFight.wav";
     private static readonly String SaveTheWorldMusicFile =
         "/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/sounds/SaveTheWorld.wav";
+    private static readonly String BonetrousleMusicFile =
+        "/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/sounds/Bonetrousle.wav";
 
     public static void Main()
     {
@@ -27,14 +29,14 @@ static class Program
         Player = new Player(new Location(Dungeon.Map.PlayerSpawnTile.TileX, Dungeon.Map.PlayerSpawnTile.TileY), new Location(2, 2));
         
         //render the new map
-        Dungeon.Map.PrintTiles(new Map.Coord(Player.TileLocation.X, Player.TileLocation.Y), 1 + RenderDistance*2, 1 + RenderDistance*2);
+        Dungeon.Map.PrintTiles(new Map.Coord(Player.TileLocation.X, Player.TileLocation.Y), RenderDistance, RenderDistance);
         
         
         Thread gameLoop = new Thread(new ThreadStart(GameLoopWorker));
         gameLoop.Start();
         
         Thread musicPlayer = new Thread(new ThreadStart(MusicPlayerWorker));
-        //musicPlayer.Start(); //temporarily disabled
+        musicPlayer.Start();
         
         void GameLoopWorker() {
             while (true)
@@ -43,19 +45,16 @@ static class Program
                 List<Location> chunksToBeLoaded = KeyboardInputHandler.HandleInput(Player, Dungeon);
                 if (chunksToBeLoaded.Count > 0)
                 {
-                    Console.WriteLine("loaded new chunks"); //temp
-                    
                     //handle chunk loading (eg. enemy spawns)
                     foreach (var loc in chunksToBeLoaded)
                     {
                         Dungeon.Map.LoadedChunks[loc.X, loc.Y] = true;
-                        Console.WriteLine("loaded chunk at " + loc.X + ", " + loc.Y); //temp
-                        Dungeon.Map.SpawnEnemyInChunk(loc);
+                        Dungeon.Map.SpawnEnemiesInChunk(loc);
                     }
                 }
                 
                 //render the new map
-                Dungeon.Map.PrintTiles(new Map.Coord(Player.TileLocation.X, Player.TileLocation.Y), 1 + RenderDistance*2, 1 + RenderDistance*2);
+                Dungeon.Map.PrintTiles(new Map.Coord(Player.TileLocation.X, Player.TileLocation.Y), RenderDistance, RenderDistance);
             }
         }
         
@@ -64,6 +63,7 @@ static class Program
         {
             while (true)
             {
+                await Audio.Play(BonetrousleMusicFile, new PlaybackOptions { Rate = 0.5, Quality = 1, Time = 0});
                 await Audio.Play(MainDungeonMusicFile, new PlaybackOptions { Rate = 0.5, Quality = 1, Time = 0});
                 await Audio.Play(SaveTheWorldMusicFile, new PlaybackOptions { Rate = 0.5, Quality = 1, Time = 0});
                 await Audio.Play(DatingFightMusicFile, new PlaybackOptions { Rate = 0.5, Quality = 1, Time = 0});

@@ -2,27 +2,27 @@ namespace DungeonGame;
 
 public static class KeyboardInputHandler
 {
-    
+    public static char LastMoveLeftRight = 'd';
     //returns true if the player loaded new chunks
     public static List<Location> HandleInput(Player player, Dungeon dungeon)
     {
         var map = dungeon.Map;
         var key = Console.ReadKey().Key;
         var currentTile = Map.Tiles[map.TileMap[player.TileLocation.X, player.TileLocation.Y]];
-        
+
+        Location tile;
+        bool playerCanMakeMove;
         switch (key)
         {
             //Movement Up
             case ConsoleKey.W or ConsoleKey.UpArrow:
-                Location tile;
                 Location location1Above;
-                bool playerCanMakeMove;
                 switch (player.RelativeLocation.Y)
                 {
                     case > 0 and <= 4:
                     {
                         playerCanMakeMove = true;
-                        
+
                         //check if the tile above the player is empty
                         tile = player.TileLocation;
                         location1Above = new Location(player.RelativeLocation.X, player.RelativeLocation.Y - 1);
@@ -30,25 +30,29 @@ public static class KeyboardInputHandler
                         //checks if there is an enemy or wall above the player
                         foreach (var enemy in map.enemies)
                         {
-                            if (enemy.TileLocation.isSameLocation(tile) && enemy.RelativeLocation.isSameLocation(location1Above)) playerCanMakeMove = false;
+                            if (enemy.TileLocation.isSameLocation(tile) &&
+                                enemy.RelativeLocation.isSameLocation(location1Above)) playerCanMakeMove = false;
                         }
-                        
-                        if (currentTile[player.RelativeLocation.Y - 1, player.RelativeLocation.X] == Map.WallTile) playerCanMakeMove = false;
-                        
+
+                        if (currentTile[player.RelativeLocation.Y - 1, player.RelativeLocation.X] == Map.WallTile)
+                            playerCanMakeMove = false;
+
                         //makes the move
                         if (playerCanMakeMove) player.RelativeLocation.Y--;
                         break;
                     }
                     case 0:
                         playerCanMakeMove = true;
-                        
+
                         //check if the tile above the player is empty
-                        tile = new Location(player.TileLocation.X, player.TileLocation.Y - 1);;
+                        tile = new Location(player.TileLocation.X, player.TileLocation.Y - 1);
+                        ;
                         location1Above = new Location(player.RelativeLocation.X, 4);
-                        
+
                         foreach (var enemy in map.enemies)
                         {
-                            if (enemy.TileLocation.isSameLocation(tile) && enemy.RelativeLocation.isSameLocation(location1Above)) playerCanMakeMove = false;
+                            if (enemy.TileLocation.isSameLocation(tile) &&
+                                enemy.RelativeLocation.isSameLocation(location1Above)) playerCanMakeMove = false;
                         }
 
                         if (playerCanMakeMove)
@@ -60,6 +64,7 @@ public static class KeyboardInputHandler
                         break;
                 }
                 break;
+            
             //Movement Down
             case ConsoleKey.S or ConsoleKey.DownArrow:
                 Location location1Below;
@@ -68,7 +73,7 @@ public static class KeyboardInputHandler
                     case >= 0 and < 4:
                     {
                         playerCanMakeMove = true;
-                        
+
                         //check if the tile above the player is empty
                         tile = player.TileLocation;
                         location1Below = new Location(player.RelativeLocation.X, player.RelativeLocation.Y + 1);
@@ -76,25 +81,29 @@ public static class KeyboardInputHandler
                         //checks if there is an enemy or wall above the player
                         foreach (var enemy in map.enemies)
                         {
-                            if (enemy.TileLocation.isSameLocation(tile) && enemy.RelativeLocation.isSameLocation(location1Below)) playerCanMakeMove = false;
+                            if (enemy.TileLocation.isSameLocation(tile) &&
+                                enemy.RelativeLocation.isSameLocation(location1Below)) playerCanMakeMove = false;
                         }
-                        
-                        if (currentTile[player.RelativeLocation.Y + 1, player.RelativeLocation.X] == Map.WallTile) playerCanMakeMove = false;
-                        
+
+                        if (currentTile[player.RelativeLocation.Y + 1, player.RelativeLocation.X] == Map.WallTile)
+                            playerCanMakeMove = false;
+
                         //makes the move
                         if (playerCanMakeMove) player.RelativeLocation.Y++;
                         break;
                     }
                     case 4:
                         playerCanMakeMove = true;
-                        
+
                         //check if the tile above the player is empty
-                        tile = new Location(player.TileLocation.X, player.TileLocation.Y + 1);;
-                        location1Below = new Location(player.RelativeLocation.X, 0);
+                        tile = new Location(player.TileLocation.X, player.TileLocation.Y + 1);
                         
+                        location1Below = new Location(player.RelativeLocation.X, 0);
+
                         foreach (var enemy in map.enemies)
                         {
-                            if (enemy.TileLocation.isSameLocation(tile) && enemy.RelativeLocation.isSameLocation(location1Below)) playerCanMakeMove = false;
+                            if (enemy.TileLocation.isSameLocation(tile) &&
+                                enemy.RelativeLocation.isSameLocation(location1Below)) playerCanMakeMove = false;
                         }
 
                         if (playerCanMakeMove)
@@ -106,40 +115,112 @@ public static class KeyboardInputHandler
                         break;
                 }
                 break;
+            
             //Movement Left
             case ConsoleKey.A or ConsoleKey.LeftArrow:
+                Location location1Left;
                 switch (player.RelativeLocation.X)
                 {
                     case > 0 and <= 4:
                     {
-                        if (currentTile[player.RelativeLocation.Y, player.RelativeLocation.X - 1] == "  ")
+                        playerCanMakeMove = true;
+
+                        //check if the tile above the player is empty
+                        tile = player.TileLocation;
+                        location1Left = new Location(player.RelativeLocation.X - 1, player.RelativeLocation.Y);
+
+                        //checks if there is an enemy or wall above the player
+                        foreach (var enemy in map.enemies)
                         {
-                            player.RelativeLocation.X--;
+                            if (enemy.TileLocation.isSameLocation(tile) &&
+                                enemy.RelativeLocation.isSameLocation(location1Left)) playerCanMakeMove = false;
                         }
+
+                        if (currentTile[player.RelativeLocation.Y, player.RelativeLocation.X - 1] == Map.WallTile)
+                            playerCanMakeMove = false;
+
+                        //makes the move
+                        if (playerCanMakeMove) player.RelativeLocation.X--;
+                        LastMoveLeftRight = 'a';
                         break;
                     }
                     case 0:
-                        player.RelativeLocation.X = 4;
-                        player.TileLocation.X--;
-                        return ChunksToBeLoaded(player, dungeon);
+                        playerCanMakeMove = true;
+
+                        //check if the tile above the player is empty
+                        tile = new Location(player.TileLocation.X - 1, player.TileLocation.Y);
+                        ;
+                        location1Left = new Location(4, player.RelativeLocation.Y);
+
+                        foreach (var enemy in map.enemies)
+                        {
+                            if (enemy.TileLocation.isSameLocation(tile) &&
+                                enemy.RelativeLocation.isSameLocation(location1Left)) playerCanMakeMove = false;
+                        }
+
+                        if (playerCanMakeMove)
+                        {
+                            player.RelativeLocation.X = 4;
+                            player.TileLocation.X--;
+                            return ChunksToBeLoaded(player, dungeon);
+                        }
+
+                        LastMoveLeftRight = 'a';
+                        break;
                 }
                 break;
+            
             //Movement Right
             case ConsoleKey.D or ConsoleKey.RightArrow:
+                Location location1Right;
                 switch (player.RelativeLocation.X)
                 {
                     case >= 0 and < 4:
                     {
-                        if (currentTile[player.RelativeLocation.Y, player.RelativeLocation.X + 1] == "  ")
+                        playerCanMakeMove = true;
+
+                        //check if the tile above the player is empty
+                        tile = player.TileLocation;
+                        location1Right = new Location(player.RelativeLocation.X + 1, player.RelativeLocation.Y);
+
+                        //checks if there is an enemy or wall above the player
+                        foreach (var enemy in map.enemies)
                         {
-                            player.RelativeLocation.X++;
+                            if (enemy.TileLocation.isSameLocation(tile) &&
+                                enemy.RelativeLocation.isSameLocation(location1Right)) playerCanMakeMove = false;
                         }
+
+                        if (currentTile[player.RelativeLocation.Y, player.RelativeLocation.X + 1] == Map.WallTile)
+                            playerCanMakeMove = false;
+
+                        //makes the move
+                        if (playerCanMakeMove) player.RelativeLocation.X++;
+                        LastMoveLeftRight = 'd';
                         break;
                     }
                     case 4:
-                        player.RelativeLocation.X = 0;
-                        player.TileLocation.X++;
-                        return ChunksToBeLoaded(player, dungeon);
+                        playerCanMakeMove = true;
+
+                        //check if the tile above the player is empty
+                        tile = new Location(player.TileLocation.X + 1, player.TileLocation.Y);
+                        ;
+                        location1Right = new Location(0, player.RelativeLocation.Y);
+
+                        foreach (var enemy in map.enemies)
+                        {
+                            if (enemy.TileLocation.isSameLocation(tile) &&
+                                enemy.RelativeLocation.isSameLocation(location1Right)) playerCanMakeMove = false;
+                        }
+
+                        if (playerCanMakeMove)
+                        {
+                            player.RelativeLocation.X = 0;
+                            player.TileLocation.X++;
+                            return ChunksToBeLoaded(player, dungeon);
+                        }
+
+                        LastMoveLeftRight = 'd';
+                        break;
                 }
                 break;
         }
