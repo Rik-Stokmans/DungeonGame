@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace DungeonGame;
 
-static class Program
+public static class Program
 {
     public static readonly int Seed = CreatePseudoRandomSeed();
     public static Player Player;
@@ -30,7 +30,6 @@ static class Program
         
         //render the new map
         Dungeon.Map.PrintTiles(new Map.Coord(Player.TileLocation.X, Player.TileLocation.Y), RenderDistance, RenderDistance);
-        
         
         Thread gameLoop = new Thread(new ThreadStart(GameLoopWorker));
         gameLoop.Start();
@@ -74,7 +73,7 @@ static class Program
     
     
     //function to generate the seed
-    private static int CreatePseudoRandomSeed()
+    public static int CreatePseudoRandomSeed()
     {
         var randomSeed = 0;
         var iterations = 0;

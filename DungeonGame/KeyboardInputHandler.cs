@@ -157,6 +157,8 @@ public static class KeyboardInputHandler
                             if (enemy.TileLocation.isSameLocation(tile) &&
                                 enemy.RelativeLocation.isSameLocation(location1Left)) playerCanMakeMove = false;
                         }
+                        
+                        LastMoveLeftRight = 'a';
 
                         if (playerCanMakeMove)
                         {
@@ -164,8 +166,6 @@ public static class KeyboardInputHandler
                             player.TileLocation.X--;
                             return ChunksToBeLoaded(player, dungeon);
                         }
-
-                        LastMoveLeftRight = 'a';
                         break;
                 }
                 break;
@@ -211,15 +211,15 @@ public static class KeyboardInputHandler
                             if (enemy.TileLocation.isSameLocation(tile) &&
                                 enemy.RelativeLocation.isSameLocation(location1Right)) playerCanMakeMove = false;
                         }
-
+                        
+                        LastMoveLeftRight = 'd';
+                        
                         if (playerCanMakeMove)
                         {
                             player.RelativeLocation.X = 0;
                             player.TileLocation.X++;
                             return ChunksToBeLoaded(player, dungeon);
                         }
-
-                        LastMoveLeftRight = 'd';
                         break;
                 }
                 break;

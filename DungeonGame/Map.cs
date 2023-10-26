@@ -2,6 +2,7 @@ namespace DungeonGame;
 
 public class Map
 {
+    public MapSquare[][] map = null!;
     private int _density;
     public int Height;
     public int Width;
@@ -34,6 +35,7 @@ public class Map
         {
             BitMap = new int[width, height];
             TileMap = new int[width - 1, height - 1];
+            
             RandomFillMap();
 
             for (var i = 0; i < 2; i++)
@@ -668,6 +670,24 @@ public class Map
             {WallTile,WallTile,WallTile,WallTile,WallTile}
         });
         return tiles;
+    }
+    
+    public struct MapSquare
+    {
+        public bool IsWall;
+        public bool HasEnemy;
+        public int EnemyID;
+        public bool HasPlayer;
+        public bool IsWalkable;
+            
+        public MapSquare(bool isWall, bool hasEnemy, int enemyID, bool hasPlayer, bool isWalkable)
+        {
+            IsWall = isWall;
+            HasEnemy = hasEnemy;
+            EnemyID = enemyID;
+            HasPlayer = hasPlayer;
+            IsWalkable = isWalkable;
+        }
     }
 
     private class Room : IComparable<Room>
