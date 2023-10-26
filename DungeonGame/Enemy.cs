@@ -21,9 +21,6 @@ public class Enemy : Entity
         }
     }
     
-    
-    
-    
     public enum EnemyType
     {
         Goblin

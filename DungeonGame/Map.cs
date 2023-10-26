@@ -37,8 +37,6 @@ public class Map
                 
                 MapSquareMap = GenerateMapSquareMap(tileMap);
 
-                //PlayerSpawnTile = GeneratePlayerSpawnTile();
-
                 foundValidMap = true;
             }
         }
@@ -109,43 +107,6 @@ public class Map
 
         return wallCount;
     }
-    
-    /*
-    private Coord GeneratePlayerSpawnTile()
-    {
-        var playerSpawn = new Coord(0, 0);
-        
-        for (var j = 0; j < Width - 1; j++)
-        {
-            for (var i = 0; i < Height - 1; i++)
-            {
-                switch (TileMap[i, j])
-                {
-                    case 1:
-                    case 2:
-                    case 4:
-                    case 8:
-                        playerSpawn.TileX = i;
-                        playerSpawn.TileY = j;
-                        return playerSpawn;
-                    case 3:
-                    case 5:
-                    case 10:
-                    case 12:
-                        playerSpawn.TileX = i;
-                        playerSpawn.TileY = j;
-                        return playerSpawn;
-                    case 6:
-                    case 9:
-                        playerSpawn.TileX = i;
-                        playerSpawn.TileY = j;
-                        return playerSpawn;
-                }
-            }
-        }
-        return playerSpawn;
-    }
-    */
     
     void ProcessMap(List<List<Coord>> regions, ref bool[,] bitMap)
     {
@@ -463,80 +424,6 @@ public class Map
         }
         return mapSquareMap;
     }
-
-    /*
-    public void PrintTiles(Coord centerTile, int sizeX, int sizeY)
-    {   
-        var printableMapSizeX = _tileMapWidth - (sizeX + 1);
-        var printableMapSizeY = _tileMapHeight - (sizeY + 1);
-
-        if (centerTile.TileX >= printableMapSizeX) centerTile.TileX = printableMapSizeX;
-        if (centerTile.TileY >= printableMapSizeY) centerTile.TileY = printableMapSizeY;
-        if (centerTile.TileX - sizeX < 0) centerTile.TileX = sizeX;
-        if (centerTile.TileY - sizeY < 0) centerTile.TileY = sizeY;
-
-        Console.Clear();
-        Console.ForegroundColor = ConsoleColor.DarkBlue;
-        Console.BackgroundColor = ConsoleColor.White;
-        
-        //prints the tiles that are in the bounds
-        List<Enemy> tempEnemyList = new List<Enemy>(enemies);
-        for (var j = 0 - sizeY; j <= sizeY; j++)
-        {
-            for (var y = 0; y < 5; y++)
-            {
-                for (var i = 0 - sizeX; i <= sizeX; i++)
-                {
-                    for (var x = 0; x < 5; x++)
-                    {
-                        var emptyTile = true;
-                        foreach (var enemy in tempEnemyList)
-                        {
-                            if (centerTile.TileX + i == enemy.TileLocation.X &&
-                                centerTile.TileY + j == enemy.TileLocation.Y &&
-                                x == enemy.RelativeLocation.X &&
-                                y == enemy.RelativeLocation.Y)
-                            {
-                                Console.ForegroundColor = ConsoleColor.DarkRed;
-                                Console.Write("O/");
-                                Console.ForegroundColor = ConsoleColor.DarkBlue;
-                                Console.BackgroundColor = ConsoleColor.White;
-                                emptyTile = false;
-                                tempEnemyList.Remove(enemy);
-                                break;
-                            }
-                        }
-                        
-                        if (centerTile.TileX + i == Program.Player.TileLocation.X &&
-                            centerTile.TileY + j == Program.Player.TileLocation.Y &&
-                            x == Program.Player.RelativeLocation.X &&
-                            y == Program.Player.RelativeLocation.Y)
-                        {
-                            Console.ForegroundColor = ConsoleColor.Black;
-                            if (KeyboardInputHandler.LastMoveLeftRight == 'a') Console.Write("\\O");
-                            else if (KeyboardInputHandler.LastMoveLeftRight == 'd') Console.Write("O/");
-                            Console.ForegroundColor = ConsoleColor.DarkBlue;
-                            Console.BackgroundColor = ConsoleColor.White;
-                            emptyTile = false;
-                        }
-                        if (emptyTile)
-                        {
-                            Console.Write(Tiles[TileMap[centerTile.TileX + i, centerTile.TileY + j]][y, x]);
-                        }
-                    }
-                }
-                Console.WriteLine("");
-            }
-        }
-    }
-    */
-
-    /*
-    public void SpawnEnemiesInChunk(Location chunk)
-    {
-        if (Rng.NextDouble()*2 <= 1) enemies.Add(new Enemy(chunk, TileMap[chunk.X,chunk.Y], Enemy.EnemyType.Goblin));
-    }
-    */
     
     public struct Coord
     {
