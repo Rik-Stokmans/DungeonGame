@@ -2,7 +2,7 @@ namespace DungeonGame;
 
 public static class KeyboardInputHandler
 {
-    public static char LastMoveLeftRight = 'd';
+    public static bool IsLastMoveLeft = false;
     //returns true if the player loaded new chunks
     public static void HandleInput(Player player, Dungeon dungeon)
     {
@@ -14,40 +14,68 @@ public static class KeyboardInputHandler
         {
             //Movement Up
             case ConsoleKey.W or ConsoleKey.UpArrow:
-                
-                playerCanMakeMove = true;
+
+                playerCanMakeMove = map.MapSquareMap[player.Position.X - 1, player.Position.Y].IsWalkable;
 
                 //makes the move
-                if (playerCanMakeMove) player.Position.Y--;
+                if (playerCanMakeMove)
+                {
+                    map.MapSquareMap[player.Position.X, player.Position.Y].HasPlayer = false;
+                    map.MapSquareMap[player.Position.X, player.Position.Y].IsWalkable = true;
+                    player.Position.X--;
+                    map.MapSquareMap[player.Position.X, player.Position.Y].HasPlayer = true;
+                    map.MapSquareMap[player.Position.X, player.Position.Y].IsWalkable = false;
+                }
                 break;
             
             //Movement Down
             case ConsoleKey.S or ConsoleKey.DownArrow:
                 
-                playerCanMakeMove = true;
+                playerCanMakeMove = map.MapSquareMap[player.Position.X + 1, player.Position.Y].IsWalkable;
                 
                 //makes the move
-                if (playerCanMakeMove) player.Position.Y++;
+                if (playerCanMakeMove)
+                {
+                    map.MapSquareMap[player.Position.X, player.Position.Y].HasPlayer = false;
+                    map.MapSquareMap[player.Position.X, player.Position.Y].IsWalkable = true;
+                    player.Position.X++;
+                    map.MapSquareMap[player.Position.X, player.Position.Y].HasPlayer = true;
+                    map.MapSquareMap[player.Position.X, player.Position.Y].IsWalkable = false;
+                }
                 break;
             
             //Movement Left
             case ConsoleKey.A or ConsoleKey.LeftArrow:
                 
-                playerCanMakeMove = true;
+                playerCanMakeMove = map.MapSquareMap[player.Position.X, player.Position.Y - 1].IsWalkable;
         
                 //makes the move
-                if (playerCanMakeMove) player.Position.X--;
-                LastMoveLeftRight = 'a';
+                if (playerCanMakeMove)
+                {
+                    map.MapSquareMap[player.Position.X, player.Position.Y].HasPlayer = false;
+                    map.MapSquareMap[player.Position.X, player.Position.Y].IsWalkable = true;
+                    player.Position.Y--;
+                    map.MapSquareMap[player.Position.X, player.Position.Y].HasPlayer = true;
+                    map.MapSquareMap[player.Position.X, player.Position.Y].IsWalkable = false;
+                }
+                IsLastMoveLeft = true;
                 break;
             
             //Movement Right
             case ConsoleKey.D or ConsoleKey.RightArrow:
                 
-                playerCanMakeMove = true;
+                playerCanMakeMove = map.MapSquareMap[player.Position.X, player.Position.Y + 1].IsWalkable;
         
                 //makes the move
-                if (playerCanMakeMove) player.Position.X++;
-                LastMoveLeftRight = 'd';
+                if (playerCanMakeMove)
+                {
+                    map.MapSquareMap[player.Position.X, player.Position.Y].HasPlayer = false;
+                    map.MapSquareMap[player.Position.X, player.Position.Y].IsWalkable = true;
+                    player.Position.Y++;
+                    map.MapSquareMap[player.Position.X, player.Position.Y].HasPlayer = true;
+                    map.MapSquareMap[player.Position.X, player.Position.Y].IsWalkable = false;
+                }
+                IsLastMoveLeft = false;
                 break;
         }
     }

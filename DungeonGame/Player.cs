@@ -10,5 +10,7 @@ public class Player : Entity
         Level = 0;
         Armor = new Armor();
         Position = position;
+        Program.Dungeon.Map.MapSquareMap[position.X, position.Y].HasPlayer = true;
+        Program.Dungeon.Map.MapSquareMap[position.X, position.Y].IsWalkable = false;
     }
 }

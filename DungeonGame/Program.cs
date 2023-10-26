@@ -25,17 +25,18 @@ public static class Program
     public static void Main()
     {
         //generate the dungeon and the player
-        Dungeon = new Dungeon(50, 50, 54);
+        Dungeon = new Dungeon(10, 20, 54);
         
         //generate the player entity //todo make the player spawn in a random location
-        Player = new Player(new Map.Coord(5, 5));
+        Player = new Player(new Map.Coord(10, 10));
         
         //render the new map
         for (int i = 0; i < Dungeon.Map.MapSquareMap.GetLength(0); i++)
         {
             for (int j = 0; j < Dungeon.Map.MapSquareMap.GetLength(1); j++)
             {
-                Console.Write(Dungeon.Map.MapSquareMap[i, j].IsWall ? '#' : ' ');
+                if (Dungeon.Map.MapSquareMap[i, j].HasPlayer) Console.Write("O/");
+                else Console.Write(Dungeon.Map.MapSquareMap[i, j].IsWall ? "##" : "  ");
             }
             Console.WriteLine();
         }
@@ -56,6 +57,15 @@ public static class Program
                 
                 
                 //render the new map
+                for (int i = 0; i < Dungeon.Map.MapSquareMap.GetLength(0); i++)
+                {
+                    for (int j = 0; j < Dungeon.Map.MapSquareMap.GetLength(1); j++)
+                    {
+                        if (Dungeon.Map.MapSquareMap[i, j].HasPlayer) Console.Write("O/");
+                        else Console.Write(Dungeon.Map.MapSquareMap[i, j].IsWall ? "##" : "  ");
+                    }
+                    Console.WriteLine();
+                }
             }
         }
         

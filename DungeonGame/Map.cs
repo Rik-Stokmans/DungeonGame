@@ -384,9 +384,9 @@ public class Map
     private int[,] GenerateTileMap(bool[,] bitMap)
     {
         int[,] tileMap = new int[_width - 1, _height - 1];
-        for (var i = 0; i < _height - 1; i++)
+        for (var i = 0; i < _width - 1; i++)
         {
-            for (var j = 0; j < _width - 1; j++)
+            for (var j = 0; j < _height - 1; j++)
             {
                 tileMap[i, j] = 0;
                 if (bitMap[i, j]) tileMap[i, j] += 1;
