@@ -2,13 +2,13 @@ namespace DungeonGame;
 
 public class Player : Entity
 {
-    public Player(Location playerSpawn, Location relativeLocation)
+    
+    public Player(Map.Coord position)
     {
-        TileLocation = playerSpawn;
-        RelativeLocation = relativeLocation;
         Speed = 0;
-        Health = 0;
+        Health = 10;
         Level = 0;
         Armor = new Armor();
+        Position = position;
     }
 }

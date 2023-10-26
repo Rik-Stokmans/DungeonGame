@@ -26,10 +26,19 @@ public static class Program
     {
         //generate the dungeon and the player
         Dungeon = new Dungeon(50, 50, 54);
-        Player = new Player(new Location(Dungeon.Map.PlayerSpawnTile.TileX, Dungeon.Map.PlayerSpawnTile.TileY), new Location(2, 2));
+        
+        //generate the player entity //todo make the player spawn in a random location
+        Player = new Player(new Map.Coord(5, 5));
         
         //render the new map
-        Dungeon.Map.PrintTiles(new Map.Coord(Player.TileLocation.X, Player.TileLocation.Y), RenderDistance, RenderDistance);
+        for (int i = 0; i < Dungeon.Map.MapSquareMap.GetLength(0); i++)
+        {
+            for (int j = 0; j < Dungeon.Map.MapSquareMap.GetLength(1); j++)
+            {
+                Console.Write(Dungeon.Map.MapSquareMap[i, j].IsWall ? '#' : ' ');
+            }
+            Console.WriteLine();
+        }
         
         Thread gameLoop = new Thread(new ThreadStart(GameLoopWorker));
         gameLoop.Start();
@@ -41,19 +50,12 @@ public static class Program
             while (true)
             {
                 //await a player movement (returns true if the player loaded new chunks)
-                List<Location> chunksToBeLoaded = KeyboardInputHandler.HandleInput(Player, Dungeon);
-                if (chunksToBeLoaded.Count > 0)
-                {
-                    //handle chunk loading (eg. enemy spawns)
-                    foreach (var loc in chunksToBeLoaded)
-                    {
-                        Dungeon.Map.LoadedChunks[loc.X, loc.Y] = true;
-                        Dungeon.Map.SpawnEnemiesInChunk(loc);
-                    }
-                }
+                KeyboardInputHandler.HandleInput(Player, Dungeon);
+                
+                //handle enemy movement
+                
                 
                 //render the new map
-                Dungeon.Map.PrintTiles(new Map.Coord(Player.TileLocation.X, Player.TileLocation.Y), RenderDistance, RenderDistance);
             }
         }
         

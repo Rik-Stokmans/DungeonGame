@@ -2,115 +2,91 @@ namespace DungeonGame;
 
 public class Map
 {
-    public MapSquare[][] map = null!;
-    private int _density;
-    public int Height;
-    public int Width;
-    private int _tileMapHeight;
-    private int _tileMapWidth;
-    public Coord PlayerSpawnTile;
-    public int[,] BitMap = null!;
-    public int[,] TileMap = null!;
-    public bool[,] LoadedChunks = null!;
-    public static List<String[,]> Tiles = null!;
-    public List<Enemy> enemies = new();
-    private const int PathSize = 1;
-    private List<List<Coord>> _regions = null!;
+    private static readonly List<bool[,]> Tiles = GenerateTiles();
+    private static readonly Random Rng = new(Program.Seed);
+    private readonly int _height;
+    private readonly int _width;
     private const int RoomDensity = 200;
-    public static readonly String VoidTile = "  ";
-    public static readonly String WallTile = "\u2588\u2588";
-    public static Random Rng = new(Program.Seed);
+    private const int RoomMinSize = 4;
+    private const int PathSize = 1;
     
-    public Map(int width, int height, int density)
-    { 
-        Tiles = GenerateTiles();
-        _density = density;
-        Width = width;
-        Height = height;
-        _tileMapWidth = width - 1;
-        _tileMapHeight = height - 1;
+    public MapSquare[,] MapSquareMap = null!;
+    
 
-        var foundSuitableMap = false;
-        while (!foundSuitableMap)
+    public Map(int width, int height, int density = 54)
+    { 
+        _width = width;
+        _height = height;
+
+        bool foundValidMap = false;
+        while (!foundValidMap) //loops until a valid map is found and then stops
         {
-            BitMap = new int[width, height];
-            TileMap = new int[width - 1, height - 1];
-            
-            RandomFillMap();
+            bool[,] bitMap = RandomFillMap(density);
 
             for (var i = 0; i < 2; i++)
             {
-                SmoothMap();
+                SmoothMap(ref bitMap);
             }
 
-            _regions = GetRegions(0);
+            List<List<Coord>> regions = GetRegions(false, bitMap);
 
-            if (_regions.Count >= Math.Ceiling((double)(Width * Height) / RoomDensity))
+            if (regions.Count >= Math.Ceiling((double)(_width * _height) / RoomDensity))
             {
-                foundSuitableMap = true;
-                ProcessMap();
-                GenerateTileMap(BitMap);
+                ProcessMap(regions, ref bitMap);
+                int[,] tileMap = GenerateTileMap(bitMap);
+                
+                MapSquareMap = GenerateMapSquareMap(tileMap);
 
-                PlayerSpawnTile = GeneratePlayerSpawnTile();
-            }
+                //PlayerSpawnTile = GeneratePlayerSpawnTile();
 
-            LoadedChunks = new bool[Width - 1, Height - 1];
-            for (var i = 0; i < Width - 1; i++)
-            {
-                for (var j = 0; j < Height - 1; j++)
-                {
-                    if (TileMap[i, j] == 15)
-                    {
-                        LoadedChunks[i, j] = true;
-                    } else {
-                        LoadedChunks[i, j] = false;
-                    }
-                }
+                foundValidMap = true;
             }
         }
     }
     
-    void RandomFillMap()
+    private bool[,] RandomFillMap(int density)
     {
-        for (var i = 0; i < Width; i++)
+        bool[,] bitMap = new bool[_width, _height];
+        for (var i = 0; i < _width; i++)
         {
-            for (var j = 0; j < Height; j++)
+            for (var j = 0; j < _height; j++)
             {
-                if (j == 0 || j == Height - 1 || i == 0 || i == Width - 1)
+                if (j == 0 || j == _height - 1 || i == 0 || i == _width - 1)
                 {
-                    BitMap[i, j] = 1;
+                    bitMap[i, j] = true;
                 }
                 else
                 {
-                    if (Rng.NextDouble() * 100 <= _density) BitMap[i, j] = 1;
+                    if (Rng.NextDouble() * 100 <= density) bitMap[i, j] = true;
                 }
             }
         }
+        return bitMap;
     }
     
-    private void SmoothMap()
+    private void SmoothMap(ref bool[,] bitMap)
     {
-        int[,] smoothedMap = new int[Width, Height];
+        bool[,] smoothedMap = new bool[_width, _height];
 
-        for (var i = 0; i < Width; i++)
+        for (var i = 0; i < _width; i++)
         {
-            for (var j = 0; j < Height; j++)
+            for (var j = 0; j < _height; j++)
             {
-                var neighbourWallTiles = GetSurroundingWallCount(i, j);
+                var neighbourWallTiles = GetSurroundingWallCount(i, j, bitMap);
 
                 smoothedMap[i, j] = neighbourWallTiles switch
                 {
-                    > 4 => 1,
-                    < 4 => 0,
+                    > 4 => true,
+                    < 4 => false,
                     _ => smoothedMap[i, j]
                 };
             }
         }
 
-        BitMap = smoothedMap;
+        bitMap = smoothedMap;
     }
 
-    int GetSurroundingWallCount(int gridX, int gridY)
+    int GetSurroundingWallCount(int gridX, int gridY, bool[,] bitMap)
     {
         int wallCount = 0;
         for (int neighbourX = gridX - 1; neighbourX <= gridX + 1; neighbourX++)
@@ -121,7 +97,7 @@ public class Map
                 {
                     if (neighbourX != gridX || neighbourY != gridY)
                     {
-                        wallCount += BitMap[neighbourX, neighbourY];
+                        if (bitMap[neighbourX, neighbourY]) wallCount++;
                     }
                 }
                 else
@@ -134,6 +110,7 @@ public class Map
         return wallCount;
     }
     
+    /*
     private Coord GeneratePlayerSpawnTile()
     {
         var playerSpawn = new Coord(0, 0);
@@ -168,25 +145,25 @@ public class Map
         }
         return playerSpawn;
     }
+    */
     
-    void ProcessMap()
+    void ProcessMap(List<List<Coord>> regions, ref bool[,] bitMap)
     {
-        Console.WriteLine(_regions.Count);
-        int roomThresholdSize = 4;
+        Console.WriteLine(regions.Count);
         List<Room> survivingRooms = new List<Room>();
 
-        foreach (List<Coord> roomRegion in _regions)
+        foreach (List<Coord> roomRegion in regions)
         {
-            if (roomRegion.Count < roomThresholdSize)
+            if (roomRegion.Count < RoomMinSize)
             {
                 foreach (Coord tile in roomRegion)
                 {
-                    BitMap[tile.TileX, tile.TileY] = 1;
+                    bitMap[tile.X, tile.Y] = true;
                 }
             }
             else
             {
-                survivingRooms.Add(new Room(roomRegion, BitMap));
+                survivingRooms.Add(new Room(roomRegion, bitMap));
             }
         }
 
@@ -198,26 +175,26 @@ public class Map
         survivingRooms.Sort();
         survivingRooms[0].IsAccessibleFromMainRoom = true;
 
-        ConnectClosestRooms(survivingRooms);
+        ConnectClosestRooms(survivingRooms, ref bitMap);
     }
-    
-    List<List<Coord>> GetRegions(int tileType)
+
+    List<List<Coord>> GetRegions(bool tileType, bool[,] bitMap)
     {
         List<List<Coord>> regions = new List<List<Coord>>();
-        int[,] mapFlags = new int[Width, Height];
+        int[,] mapFlags = new int[_width, _height];
 
-        for (var x = 0; x < Width; x++)
+        for (var x = 0; x < _width; x++)
         {
-            for (var y = 0; y < Height; y++)
+            for (var y = 0; y < _height; y++)
             {
-                if (mapFlags[x, y] == 0 && BitMap[x, y] == tileType)
+                if (mapFlags[x, y] == 0 && bitMap[x, y] == tileType)
                 {
-                    List<Coord> newRegion = GetRegionTiles(x, y);
+                    List<Coord> newRegion = GetRegionTiles(x, y, bitMap);
                     regions.Add(newRegion);
 
                     foreach (Coord tile in newRegion)
                     {
-                        mapFlags[tile.TileX, tile.TileY] = 1;
+                        mapFlags[tile.X, tile.Y] = 1;
                     }
                 }
             }
@@ -225,11 +202,11 @@ public class Map
         return regions;
     }
     
-    List<Coord> GetRegionTiles(int startX, int startY)
+    List<Coord> GetRegionTiles(int startX, int startY, bool[,] bitMap)
     {
         List<Coord> tiles = new List<Coord>();
-        var mapFlags = new int[Width, Height];
-        var tileType = BitMap[startX, startY];
+        var mapFlags = new int[_width, _height];
+        var tileType = bitMap[startX, startY];
 
         var queue = new Queue<Coord>();
         queue.Enqueue(new Coord(startX, startY));
@@ -240,13 +217,13 @@ public class Map
             Coord tile = queue.Dequeue();
             tiles.Add(tile);
 
-            for (var x = tile.TileX - 1; x <= tile.TileX + 1; x++)
+            for (var x = tile.X - 1; x <= tile.X + 1; x++)
             {
-                for (var y = tile.TileY - 1; y <= tile.TileY + 1; y++)
+                for (var y = tile.Y - 1; y <= tile.Y + 1; y++)
                 {
-                    if (IsInMapRange(x, y) && (y == tile.TileY || x == tile.TileX))
+                    if (IsInMapRange(x, y) && (y == tile.Y || x == tile.X))
                     {
-                        if (mapFlags[x, y] == 0 && BitMap[x, y] == tileType)
+                        if (mapFlags[x, y] == 0 && bitMap[x, y] == tileType)
                         {
                             mapFlags[x, y] = 1;
                             queue.Enqueue(new Coord(x, y));
@@ -260,10 +237,10 @@ public class Map
     
     bool IsInMapRange(int x, int y)
     {
-        return x >= 0 && x < Width && y >= 0 && y < Height;
+        return x >= 0 && x < _width && y >= 0 && y < _height;
     }
 
-    void ConnectClosestRooms(List<Room> allRooms, bool forceAccessibilityFromMainRoom = false)
+    void ConnectClosestRooms(List<Room> allRooms, ref bool[,] bitMap, bool forceAccessibilityFromMainRoom = false)
     {
         List<Room> roomListA = new List<Room>();
         List<Room> roomListB = new List<Room>();
@@ -319,8 +296,8 @@ public class Map
                     {
                         Coord tileA = roomA.EdgeTiles[tileIndexA];
                         Coord tileB = roomB.EdgeTiles[tileIndexB];
-                        int distanceBetweenRooms = (int)(Math.Pow(tileA.TileX - tileB.TileX, 2) +
-                                                         Math.Pow(tileA.TileY - tileB.TileY, 2));
+                        int distanceBetweenRooms = (int)(Math.Pow(tileA.X - tileB.X, 2) +
+                                                         Math.Pow(tileA.Y - tileB.Y, 2));
 
                         if (distanceBetweenRooms < bestDistance || !possibleConnectionFound)
                         {
@@ -337,34 +314,34 @@ public class Map
 
             if (possibleConnectionFound && !forceAccessibilityFromMainRoom)
             {
-                CreatePassage(bestRoomA, bestRoomB, bestTileA, bestTileB);
+                CreatePassage(bestRoomA, bestRoomB, bestTileA, bestTileB, ref bitMap);
             }
         }
 
         if (possibleConnectionFound && forceAccessibilityFromMainRoom)
         {
-            CreatePassage(bestRoomA, bestRoomB, bestTileA, bestTileB);
-            ConnectClosestRooms(allRooms, true);
+            CreatePassage(bestRoomA, bestRoomB, bestTileA, bestTileB, ref bitMap);
+            ConnectClosestRooms(allRooms, ref bitMap, true);
         }
 
         if (!forceAccessibilityFromMainRoom)
         {
-            ConnectClosestRooms(allRooms, true);
+            ConnectClosestRooms(allRooms, ref bitMap, true);
         }
     }
 
-    void CreatePassage(Room roomA, Room roomB, Coord tileA, Coord tileB)
+    void CreatePassage(Room roomA, Room roomB, Coord tileA, Coord tileB, ref bool[,] bitMap)
     {
         Room.ConnectRooms(roomA, roomB);
 
         List<Coord> line = GetLine(tileA, tileB);
         foreach (Coord c in line)
         {
-            DrawCircle(c, PathSize);
+            DrawCircle(c, PathSize, ref bitMap);
         }
     }
 
-    void DrawCircle(Coord c, int r)
+    void DrawCircle(Coord c, int r, ref bool[,] bitMap)
     {
         for (int x = -r; x <= r; x++)
         {
@@ -372,11 +349,11 @@ public class Map
             {
                 if (x * x + y * y <= r * r)
                 {
-                    int drawX = c.TileX + x;
-                    int drawY = c.TileY + y;
+                    int drawX = c.X + x;
+                    int drawY = c.Y + y;
                     if (IsInMapRange(drawX, drawY))
                     {
-                        BitMap[drawX, drawY] = 0;
+                        bitMap[drawX, drawY] = false;
                     }
                 }
             }
@@ -387,11 +364,11 @@ public class Map
     {
         List<Coord> line = new List<Coord>();
 
-        int x = from.TileX;
-        int y = from.TileY;
+        int x = from.X;
+        int y = from.Y;
 
-        int dx = to.TileX - from.TileX;
-        int dy = to.TileY - from.TileY;
+        int dx = to.X - from.X;
+        int dy = to.Y - from.Y;
 
         bool inverted = false;
         int step = Math.Sign(dx);
@@ -443,18 +420,51 @@ public class Map
         return line;
     }
     
-    private void GenerateTileMap(int[,] map)
+    private int[,] GenerateTileMap(bool[,] bitMap)
     {
-        for (var i = 0; i < Height - 1; i++)
+        int[,] tileMap = new int[_width - 1, _height - 1];
+        for (var i = 0; i < _height - 1; i++)
         {
-            for (var j = 0; j < Width - 1; j++)
+            for (var j = 0; j < _width - 1; j++)
             {
-                TileMap[i, j] = map[i, j] + map[i+1, j]*2 + map[i, j+1]*4 + map[i+1, j+1]*8;
+                tileMap[i, j] = 0;
+                if (bitMap[i, j]) tileMap[i, j] += 1;
+                if (bitMap[i+1, j]) tileMap[i, j] += 2;
+                if (bitMap[i, j+1]) tileMap[i, j] += 4;
+                if (bitMap[i+1, j+1]) tileMap[i, j] += 8;
             }
         }
+        return tileMap;
     }
 
-    
+    private MapSquare[,] GenerateMapSquareMap(int[,] tileMap)
+    {
+        MapSquare[,] mapSquareMap = new MapSquare[(_width - 1) * 5, (_height - 1) * 5];
+        
+        for (var j = 0; j < _height - 1; j++)
+        {
+            for (var y = 0; y < 5; y++)
+            {
+                for (var i = 0; i < _width - 1; i++)
+                {
+                    for (var x = 0; x < 5; x++)
+                    {
+                        mapSquareMap[i * 5 + x, j * 5 + y] = new MapSquare
+                        {
+                            IsWall = Tiles[tileMap[i, j]][y, x],
+                            HasEnemy = false,
+                            EnemyID = -1,
+                            HasPlayer = false,
+                            IsWalkable = !Tiles[tileMap[i, j]][y, x]
+                        };
+                    }
+                }
+            }
+        }
+        return mapSquareMap;
+    }
+
+    /*
     public void PrintTiles(Coord centerTile, int sizeX, int sizeY)
     {   
         var printableMapSizeX = _tileMapWidth - (sizeX + 1);
@@ -519,156 +529,161 @@ public class Map
             }
         }
     }
+    */
 
+    /*
     public void SpawnEnemiesInChunk(Location chunk)
     {
         if (Rng.NextDouble()*2 <= 1) enemies.Add(new Enemy(chunk, TileMap[chunk.X,chunk.Y], Enemy.EnemyType.Goblin));
     }
+    */
     
     public struct Coord
     {
-        public int TileX;
-        public int TileY;
+        public int X;
+        public int Y;
 
         public Coord(int x, int y)
         {
-            TileX = x;
-            TileY = y;
+            X = x;
+            Y = y;
         }
     }
 
-    public static List<String[,]> GenerateTiles()
+    public static List<bool[,]> GenerateTiles()
     {
-        var tiles = new List<String[,]>();
-        
-        tiles.Add(new[,]
+        var tiles = new List<bool[,]>
         {
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile}
-        });
-        tiles.Add(new[,]
-        {
-            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
-            {WallTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile}
-        });
-        tiles.Add(new[,]
-        {
-            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,WallTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile}
-        });
-        tiles.Add(new[,]
-        {
-            {WallTile,WallTile,WallTile,WallTile,WallTile},
-            {WallTile,WallTile,WallTile,WallTile,WallTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile}
-        });
-        tiles.Add(new[,]
-        {
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {WallTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {WallTile,WallTile,VoidTile,VoidTile,VoidTile}
-        });
-        tiles.Add(new[,]
-        {
-            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
-            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
-            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
-            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
-            {WallTile,WallTile,VoidTile,VoidTile,VoidTile}
-        });
-        tiles.Add(new[,]
-        {
-            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,WallTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {WallTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {WallTile,WallTile,VoidTile,VoidTile,VoidTile}
-        });
-        tiles.Add(new[,]
-        {
-            {WallTile,WallTile,WallTile,WallTile,WallTile},
-            {WallTile,WallTile,WallTile,WallTile,WallTile},
-            {WallTile,WallTile,WallTile,VoidTile,VoidTile},
-            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
-            {WallTile,WallTile,VoidTile,VoidTile,VoidTile}
-        });
-        tiles.Add(new[,]
-        {
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,WallTile},
-            {VoidTile,VoidTile,VoidTile,WallTile,WallTile}
-        });
-        tiles.Add(new[,]
-        {
-            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
-            {WallTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,WallTile},
-            {VoidTile,VoidTile,VoidTile,WallTile,WallTile}
-        });
-        tiles.Add(new[,]
-        {
-            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
-            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
-            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
-            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
-            {VoidTile,VoidTile,VoidTile,WallTile,WallTile}
-        });
-        tiles.Add(new[,]
-        {
-            {WallTile,WallTile,WallTile,WallTile,WallTile},
-            {WallTile,WallTile,WallTile,WallTile,WallTile},
-            {VoidTile,VoidTile,WallTile,WallTile,WallTile},
-            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
-            {VoidTile,VoidTile,VoidTile,WallTile,WallTile}
-        });
-        tiles.Add(new[,]
-        {
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {VoidTile,VoidTile,VoidTile,VoidTile,VoidTile},
-            {WallTile,WallTile,WallTile,WallTile,WallTile},
-            {WallTile,WallTile,WallTile,WallTile,WallTile}
-        });
-        tiles.Add(new[,]
-        {
-            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
-            {WallTile,WallTile,VoidTile,VoidTile,VoidTile},
-            {WallTile,WallTile,WallTile,VoidTile,VoidTile},
-            {WallTile,WallTile,WallTile,WallTile,WallTile},
-            {WallTile,WallTile,WallTile,WallTile,WallTile}
-        });
-        tiles.Add(new[,]
-        {
-            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
-            {VoidTile,VoidTile,VoidTile,WallTile,WallTile},
-            {VoidTile,VoidTile,WallTile,WallTile,WallTile},
-            {WallTile,WallTile,WallTile,WallTile,WallTile},
-            {WallTile,WallTile,WallTile,WallTile,WallTile}
-        });
-        tiles.Add(new[,]
-        {
-            {WallTile,WallTile,WallTile,WallTile,WallTile},
-            {WallTile,WallTile,WallTile,WallTile,WallTile},
-            {WallTile,WallTile,WallTile,WallTile,WallTile},
-            {WallTile,WallTile,WallTile,WallTile,WallTile},
-            {WallTile,WallTile,WallTile,WallTile,WallTile}
-        });
+            new[,]
+            {
+                {false,false,false,false,false},
+                {false,false,false,false,false},
+                {false,false,false,false,false},
+                {false,false,false,false,false},
+                {false,false,false,false,false}
+            },
+            new[,]
+            {
+                {true,true,false,false,false},
+                {true,false,false,false,false},
+                {false,false,false,false,false},
+                {false,false,false,false,false},
+                {false,false,false,false,false}
+            },
+            new[,]
+            {
+                {false,false,false,true,true},
+                {false,false,false,false,true},
+                {false,false,false,false,false},
+                {false,false,false,false,false},
+                {false,false,false,false,false}
+            },
+            new[,]
+            {
+                {true,true,true,true,true},
+                {true,true,true,true,true},
+                {false,false,false,false,false},
+                {false,false,false,false,false},
+                {false,false,false,false,false}
+            },
+            new[,]
+            {
+                {false,false,false,false,false},
+                {false,false,false,false,false},
+                {false,false,false,false,false},
+                {true,false,false,false,false},
+                {true,true,false,false,false}
+            },
+            new[,]
+            {
+                {true,true,false,false,false},
+                {true,true,false,false,false},
+                {true,true,false,false,false},
+                {true,true,false,false,false},
+                {true,true,false,false,false}
+            },
+            new[,]
+            {
+                {false,false,false,true,true},
+                {false,false,false,false,true},
+                {false,false,false,false,false},
+                {true,false,false,false,false},
+                {true,true,false,false,false}
+            },
+            new[,]
+            {
+                {true,true,true,true,true},
+                {true,true,true,true,true},
+                {true,true,true,false,false},
+                {true,true,false,false,false},
+                {true,true,false,false,false}
+            },
+            new[,]
+            {
+                {false,false,false,false,false},
+                {false,false,false,false,false},
+                {false,false,false,false,false},
+                {false,false,false,false,true},
+                {false,false,false,true,true}
+            },
+            new[,]
+            {
+                {true,true,false,false,false},
+                {true,false,false,false,false},
+                {false,false,false,false,false},
+                {false,false,false,false,true},
+                {false,false,false,true,true}
+            },
+            new[,]
+            {
+                {false,false,false,true,true},
+                {false,false,false,true,true},
+                {false,false,false,true,true},
+                {false,false,false,true,true},
+                {false,false,false,true,true}
+            },
+            new[,]
+            {
+                {true,true,true,true,true},
+                {true,true,true,true,true},
+                {false,false,true,true,true},
+                {false,false,false,true,true},
+                {false,false,false,true,true}
+            },
+            new[,]
+            {
+                {false,false,false,false,false},
+                {false,false,false,false,false},
+                {false,false,false,false,false},
+                {true,true,true,true,true},
+                {true,true,true,true,true}
+            },
+            new[,]
+            {
+                {true,true,false,false,false},
+                {true,true,false,false,false},
+                {true,true,true,false,false},
+                {true,true,true,true,true},
+                {true,true,true,true,true}
+            },
+            new[,]
+            {
+                {false,false,false,true,true},
+                {false,false,false,true,true},
+                {false,false,true,true,true},
+                {true,true,true,true,true},
+                {true,true,true,true,true}
+            },
+            new[,]
+            {
+                {true,true,true,true,true},
+                {true,true,true,true,true},
+                {true,true,true,true,true},
+                {true,true,true,true,true},
+                {true,true,true,true,true}
+            }
+        };
+
         return tiles;
     }
     
@@ -702,7 +717,7 @@ public class Map
         {
         }
 
-        public Room(List<Coord> roomTiles, int[,] map)
+        public Room(List<Coord> roomTiles, bool[,] map)
         {
             Tiles = roomTiles;
             RoomSize = Tiles.Count;
@@ -711,13 +726,13 @@ public class Map
             EdgeTiles = new List<Coord>();
             foreach (Coord tile in Tiles)
             {
-                for (int x = tile.TileX - 1; x <= tile.TileX + 1; x++)
+                for (int x = tile.X - 1; x <= tile.X + 1; x++)
                 {
-                    for (int y = tile.TileY - 1; y <= tile.TileY + 1; y++)
+                    for (int y = tile.Y - 1; y <= tile.Y + 1; y++)
                     {
-                        if (x == tile.TileX || y == tile.TileY)
+                        if (x == tile.X || y == tile.Y)
                         {
-                            if (map[x, y] == 1)
+                            if (map[x, y])
                             {
                                 EdgeTiles.Add(tile);
                             }
