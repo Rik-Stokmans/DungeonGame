@@ -2,6 +2,8 @@ namespace DungeonGame;
 
 public class Entity
 {
+    public bool isAlive = true;
+    public int ID;
     public double Speed;
     public int Health;
     public int Level;

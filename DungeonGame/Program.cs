@@ -9,7 +9,7 @@ public static class Program
     public static readonly int Seed = CreatePseudoRandomSeed();
     public static Player Player;
     public static Dungeon Dungeon;
-    public static readonly int RenderDistance = 2;
+    public static readonly int RenderDistance = 10;
 
     private static readonly String MainDungeonMusicFile =
         "/Users/rikstokmans/RiderProjects/DungeonGame/DungeonGame/sounds/Ruins.wav";
@@ -25,47 +25,42 @@ public static class Program
     public static void Main()
     {
         //generate the dungeon and the player
-        Dungeon = new Dungeon(10, 20, 54);
+        Dungeon = new Dungeon(20, 20, 54);
         
-        //generate the player entity //todo make the player spawn in a random location
-        Player = new Player(new Map.Coord(10, 10));
+        //spawns the player
+        Player = new Player();
+        
+        //spawns the enemies
+        Dungeon.Map.SpawnEnemies();
         
         //render the new map
-        for (int i = 0; i < Dungeon.Map.MapSquareMap.GetLength(0); i++)
-        {
-            for (int j = 0; j < Dungeon.Map.MapSquareMap.GetLength(1); j++)
-            {
-                if (Dungeon.Map.MapSquareMap[i, j].HasPlayer) Console.Write("O/");
-                else Console.Write(Dungeon.Map.MapSquareMap[i, j].IsWall ? "##" : "  ");
-            }
-            Console.WriteLine();
-        }
+        Dungeon.Map.DrawMap(Player.Position, RenderDistance);
         
-        Thread gameLoop = new Thread(new ThreadStart(GameLoopWorker));
+        
+        
+        
+        Thread gameLoop = new Thread(GameLoopWorker);
         gameLoop.Start();
         
-        Thread musicPlayer = new Thread(new ThreadStart(MusicPlayerWorker));
+        Thread musicPlayer = new Thread(MusicPlayerWorker);
         musicPlayer.Start();
-        
+            
         void GameLoopWorker() {
             while (true)
             {
-                //await a player movement (returns true if the player loaded new chunks)
+                //await a player movement 2x
+                KeyboardInputHandler.HandleInput(Player, Dungeon);
+                Dungeon.Map.DrawMap(Player.Position, RenderDistance);
                 KeyboardInputHandler.HandleInput(Player, Dungeon);
                 
                 //handle enemy movement
-                
+                foreach (var enemy in Dungeon.Map.Enemies.Values)
+                {
+                    enemy.Move();
+                }
                 
                 //render the new map
-                for (int i = 0; i < Dungeon.Map.MapSquareMap.GetLength(0); i++)
-                {
-                    for (int j = 0; j < Dungeon.Map.MapSquareMap.GetLength(1); j++)
-                    {
-                        if (Dungeon.Map.MapSquareMap[i, j].HasPlayer) Console.Write("O/");
-                        else Console.Write(Dungeon.Map.MapSquareMap[i, j].IsWall ? "##" : "  ");
-                    }
-                    Console.WriteLine();
-                }
+                Dungeon.Map.DrawMap(Player.Position, RenderDistance);
             }
         }
         

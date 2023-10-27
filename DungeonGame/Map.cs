@@ -3,7 +3,8 @@ namespace DungeonGame;
 public class Map
 {
     private static readonly List<bool[,]> Tiles = GenerateTiles();
-    private static readonly Random Rng = new(Program.Seed);
+    public static readonly Random Rng = new(Program.Seed);
+    
     private readonly int _height;
     private readonly int _width;
     private const int RoomDensity = 200;
@@ -11,6 +12,7 @@ public class Map
     private const int PathSize = 1;
     
     public MapSquare[,] MapSquareMap = null!;
+    public Dictionary<int, Enemy> Enemies = new();
     
 
     public Map(int width, int height, int density = 54)
@@ -414,15 +416,101 @@ public class Map
                         {
                             IsWall = Tiles[tileMap[i, j]][y, x],
                             HasEnemy = false,
-                            EnemyID = -1,
+                            EnemyId = -1,
                             HasPlayer = false,
-                            IsWalkable = !Tiles[tileMap[i, j]][y, x]
+                            IsWalkable = !Tiles[tileMap[i, j]][y, x],
+                            IsSpawnable = !Tiles[tileMap[i, j]][y, x]
                         };
                     }
                 }
             }
         }
         return mapSquareMap;
+    }
+
+    public bool InMapSquareRange(int x, int y)
+    {
+        int mapSizeX = MapSquareMap.GetLength(0);
+        int mapSizeY = MapSquareMap.GetLength(1);
+        if (x <= 0 || x >= mapSizeX || y <= 0 || y >= mapSizeY) return false;
+        return true;
+    }
+
+    public void DisableEnemySpawningAtPoint(Coord position, int radius)
+    {
+        for (int i = position.X - radius; i <= position.X + radius; i++)
+        {
+            for (int j = position.Y - radius; j <= position.Y + radius; j++)
+            {
+                if (InMapSquareRange(i, j))
+                {
+                    MapSquareMap[i, j].IsSpawnable = false;
+                }
+            }
+        }
+    }
+    
+    public void SpawnEnemies()
+    {
+        //spawns enemies
+        for (int i = 0; i < MapSquareMap.GetLength(0); i++)
+        {
+            for (int j = 0; j < MapSquareMap.GetLength(1); j++)
+            {
+                if (MapSquareMap[i, j].IsSpawnable)
+                {
+                    if (Rng.Next(0, 100) < 2)
+                    {
+                        int id = Enemies.Count;
+                        Enemies.Add(id, new Enemy(Enemy.EnemyType.Goblin, new Coord(i, j), id));
+                    }
+                }
+            }
+        }
+    }
+
+    public void DrawMap(Coord center, int renderDistance)
+    {
+        if (renderDistance * 2 + 1 > MapSquareMap.GetLength(0) || renderDistance * 2 + 1 > MapSquareMap.GetLength(1))
+        {
+            Console.WriteLine("Render distance is too large");
+            return;
+        }
+        
+        int mapMaxIndexX = MapSquareMap.GetLength(0) - 1;
+        int mapMaxIndexY = MapSquareMap.GetLength(1) - 1;
+        
+        if (center.X - renderDistance < 0) center.X = renderDistance;
+        else if (center.X + renderDistance > mapMaxIndexX) center.X = mapMaxIndexX - renderDistance;
+        if (center.Y - renderDistance < 0) center.Y = renderDistance;
+        else if (center.Y + renderDistance > mapMaxIndexY) center.Y = mapMaxIndexY - renderDistance;
+        
+        Console.ForegroundColor = ConsoleColor.DarkBlue;
+        Console.BackgroundColor = ConsoleColor.White;
+        
+        Console.Clear();
+        for (int j = center.Y - renderDistance; j <= center.Y + renderDistance; j++)
+        {
+            for (int i = center.X - renderDistance; i <= center.X + renderDistance; i++)
+            {
+                if (MapSquareMap[i, j].HasPlayer)
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                    Console.Write("O/");
+                }
+                else if (MapSquareMap[i, j].HasEnemy)
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkRed;
+                    Console.Write("X/");
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkBlue;
+                    Console.Write(MapSquareMap[i, j].IsWall ? "\u2588\u2588" : "  ");
+                }
+            }
+            Console.WriteLine();
+        }
     }
     
     public struct Coord
@@ -434,6 +522,11 @@ public class Map
         {
             X = x;
             Y = y;
+        }
+
+        public static double GetDistance(Coord c1, Coord c2)
+        {
+            return Math.Sqrt(Math.Pow(c1.X - c2.X, 2) + Math.Pow(c1.Y - c2.Y, 2));
         }
     }
 
@@ -578,17 +671,19 @@ public class Map
     {
         public bool IsWall;
         public bool HasEnemy;
-        public int EnemyID;
+        public int EnemyId;
         public bool HasPlayer;
         public bool IsWalkable;
+        public bool IsSpawnable;
             
-        public MapSquare(bool isWall, bool hasEnemy, int enemyID, bool hasPlayer, bool isWalkable)
+        public MapSquare(bool isWall, bool hasEnemy, int enemyId, bool hasPlayer, bool isWalkable, bool isSpawnable)
         {
             IsWall = isWall;
             HasEnemy = hasEnemy;
-            EnemyID = enemyID;
+            EnemyId = enemyId;
             HasPlayer = hasPlayer;
             IsWalkable = isWalkable;
+            IsSpawnable = isSpawnable;
         }
     }
 
